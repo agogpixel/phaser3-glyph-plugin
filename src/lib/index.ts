@@ -1,2 +1,2 @@
-export { ExampleGlobalPlugin } from './plugins/example-global-plugin';
-export { ExampleScenePlugin } from './plugins/example-scene-plugin';
+export * from './gameobjects/glyphmap';
+export * from './plugins/glyph-plugin';

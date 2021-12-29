@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const { DefinePlugin } = require('webpack');
@@ -9,6 +8,22 @@ const { resolve } = require('path');
 
 const nodeEnv = process.env.NODE_ENV || 'development';
 const isProd = nodeEnv === 'production';
+
+const offValues = ['false', false, '0', 0, 'off'];
+const canvasRenderer = offValues.includes(process.env.CANVAS_RENDERER) ? false : true;
+const webglRenderer = offValues.includes(process.env.WEBGL_RENDERER) ? false : true;
+
+if (!canvasRenderer && !webglRenderer) {
+  throw new Error('At least one renderer must be enabled');
+}
+
+let outputFilename = 'main.bundle.js';
+
+if (!canvasRenderer) {
+  outputFilename = 'main-canvas.bundle.js';
+} else if (!webglRenderer) {
+  outputFilename = 'main-webgl.bundle.js';
+}
 
 const srcPath = resolve(__dirname, 'src');
 const dstPath = resolve(__dirname, 'dist');
@@ -20,21 +35,14 @@ module.exports = {
     main: `${srcPath}/index.ts`
   },
   output: {
-    filename: 'main.bundle.js',
+    filename: outputFilename,
     path: dstPath,
     library: {
-      name: 'Phaser3PluginProjectStarter',
+      name: 'Phaser3GlyphPlugin',
       type: 'umd'
     }
   },
-  externals: {
-    phaser: {
-      commonjs: 'phaser',
-      commonjs2: 'phaser',
-      amd: 'phaser',
-      root: 'Phaser'
-    }
-  },
+  externals: /^(phaser.*)$/,
   resolve: {
     extensions: ['.ts', '.js']
   },
@@ -80,12 +88,14 @@ module.exports = {
     ]
   },
   plugins: [
-    isProd ? new CleanWebpackPlugin() : undefined,
     isProd ? new MiniCssExtractPlugin() : undefined,
     new DefinePlugin({
       'process.env': {
         NODE_ENV: JSON.stringify(nodeEnv)
-      }
+      },
+      // Phaser build flags.
+      'typeof CANVAS_RENDERER': JSON.stringify(canvasRenderer),
+      'typeof WEBGL_RENDERER': JSON.stringify(webglRenderer)
     }),
     new CopyWebpackPlugin({
       patterns: ['package.json', 'README.md', 'LICENSE']

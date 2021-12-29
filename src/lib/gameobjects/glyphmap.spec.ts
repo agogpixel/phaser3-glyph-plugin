@@ -1,23 +1,33 @@
-import { ExampleGameObject } from './example-gameobject';
+import { GlyphPlugin } from '../plugins/glyph-plugin';
+import { Glyphmap } from './glyphmap';
 
-describe('Example Global Plugin', () => {
+describe('Glyphmap', () => {
   let game: Phaser.Game;
   let scene: Phaser.Scene;
-  let gameObject: ExampleGameObject;
+  let map: Glyphmap;
 
   // Squelch console.log output.
   jest.spyOn(console, 'log').mockImplementation(() => undefined);
   // Running game calls window.focus method.
   jest.spyOn(window, 'focus').mockImplementation(() => undefined);
 
+  afterAll(() => {
+    game.destroy(true, true);
+    game['runDestroy']();
+    delete global.Phaser;
+  });
+
   beforeAll((done) => {
     game = new Phaser.Game({
       type: Phaser.HEADLESS,
       scene: {
         init: function () {
-          scene = this;
+          scene = this as Phaser.Scene;
           done();
         }
+      },
+      plugins: {
+        global: [{ key: 'GlyphPlugin', plugin: GlyphPlugin, mapping: 'glyph', start: true }]
       },
       callbacks: {
         postBoot: () => game.loop.stop()
@@ -28,21 +38,11 @@ describe('Example Global Plugin', () => {
     game.textures.emit(Phaser.Textures.Events.READY);
   });
 
-  afterAll(() => {
-    game.destroy(true, true);
-    game['runDestroy']();
-    delete global.Phaser;
-  });
+  afterEach(() => map && map.destroy());
 
-  it('instantiates with value', () => {
-    gameObject = new ExampleGameObject(scene, 312, 224, {
-      fontFamily: 'Arial',
-      fontSize: '64px',
-      color: '#00ff00'
-    });
-
-    expect(gameObject).toBeTruthy();
-    expect(gameObject instanceof ExampleGameObject).toBe(true);
-    expect(gameObject.text).toEqual('Hello World!');
+  it('instantiates', () => {
+    map = new Glyphmap(scene);
+    expect(map).toBeTruthy();
+    expect(map instanceof Glyphmap).toEqual(true);
   });
 });

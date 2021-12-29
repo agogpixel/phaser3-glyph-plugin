@@ -1,11 +1,8 @@
-import { ExampleGameObject } from '../gameobjects/example-gameobject';
+import { GlyphPlugin } from './glyph-plugin';
 
-import { ExampleScenePlugin } from './example-scene-plugin';
-
-describe('Example Scene Plugin', () => {
+describe('GlyphPlugin', () => {
   let game: Phaser.Game;
-  let scene: Phaser.Scene;
-  let plugin: ExampleScenePlugin;
+  let plugin: GlyphPlugin;
 
   // Squelch console.log output.
   jest.spyOn(console, 'log').mockImplementation(() => undefined);
@@ -19,15 +16,9 @@ describe('Example Scene Plugin', () => {
   });
 
   describe('standalone', () => {
-    beforeAll((done) => {
+    beforeAll(() => {
       game = new Phaser.Game({
         type: Phaser.HEADLESS,
-        scene: {
-          init: function () {
-            scene = this;
-            done();
-          }
-        },
         callbacks: {
           postBoot: () => game.loop.stop()
         }
@@ -38,27 +29,14 @@ describe('Example Scene Plugin', () => {
     });
 
     it('instantiates', () => {
-      plugin = new ExampleScenePlugin(scene, game.plugins, 'test-scene-plugin');
-
+      plugin = new GlyphPlugin(game.plugins);
       expect(plugin).toBeTruthy();
-      expect(plugin instanceof ExampleScenePlugin).toBe(true);
-    });
-
-    it('calculates the GCD of two integers', () => {
-      plugin = new ExampleScenePlugin(scene, game.plugins, 'test-scene-plugin');
-
-      const a = 1071;
-      const b = 462;
-      const expected = 21;
-
-      expect(plugin.gcd(a, b)).toEqual(expected);
-      expect(plugin.gcd(b, a)).toEqual(expected);
+      expect(plugin instanceof GlyphPlugin).toEqual(true);
     });
   });
 
   describe('via game config', () => {
-    class BaseScene extends Phaser.Scene {}
-    class Scene extends ExampleScenePlugin.SceneMixin('example', BaseScene) {}
+    class Scene extends GlyphPlugin.GlyphScene('glyph', class extends Phaser.Scene {}) {}
 
     let scene: Scene;
 
@@ -72,7 +50,7 @@ describe('Example Scene Plugin', () => {
           }
         },
         plugins: {
-          scene: [{ key: 'ExampleScenePlugin', plugin: ExampleScenePlugin, mapping: 'example', start: true }]
+          global: [{ key: 'GlyphPlugin', plugin: GlyphPlugin, mapping: 'glyph', start: true }]
         },
         callbacks: {
           postBoot: () => game.loop.stop()
@@ -84,38 +62,38 @@ describe('Example Scene Plugin', () => {
     });
 
     it('maps to a scene', () => {
-      expect(scene.example).toBeTruthy();
-      expect(scene.example instanceof ExampleScenePlugin).toEqual(true);
+      expect(scene.glyph).toBeTruthy();
+      expect(scene.glyph instanceof GlyphPlugin).toEqual(true);
     });
 
-    it("maps a game object to a scene's game object factory", () => {
-      expect(scene.add.example2).toBeTruthy();
-      expect(typeof scene.add.example2).toEqual('function');
+    /*it("maps a game object to a scene's game object factory", () => {
+      expect(scene.add.example).toBeTruthy();
+      expect(typeof scene.add.example).toEqual('function');
     });
 
     it("adds a mapped game object via the scene's game object factory", () => {
-      const gameObject = scene.add.example2(123, 234, {});
+      const gameObject = scene.add.example(123, 234, {});
 
       expect(gameObject).toBeTruthy();
       expect(gameObject instanceof ExampleGameObject).toEqual(true);
     });
 
     it("maps a game object to a scene's game object creator", () => {
-      expect(scene.make.example2).toBeTruthy();
-      expect(typeof scene.make.example2).toEqual('function');
+      expect(scene.make.example).toBeTruthy();
+      expect(typeof scene.make.example).toEqual('function');
     });
 
     it("makes a mapped game object via the scene's game object creator", () => {
       let gameObject: ExampleGameObject;
 
       [undefined, {}, { padding: {} }].forEach((config) => {
-        gameObject = scene.make.example2(config);
+        gameObject = scene.make.example(config);
 
         expect(gameObject).toBeTruthy();
         expect(gameObject instanceof ExampleGameObject).toEqual(true);
       });
 
-      gameObject = scene.make.example2({}, true);
+      gameObject = scene.make.example({}, true);
 
       expect(gameObject).toBeTruthy();
       expect(gameObject instanceof ExampleGameObject).toEqual(true);
@@ -128,6 +106,6 @@ describe('Example Scene Plugin', () => {
 
       expect(scene.example.gcd(a, b)).toEqual(expected);
       expect(scene.example.gcd(b, a)).toEqual(expected);
-    });
+    });*/
   });
 });
