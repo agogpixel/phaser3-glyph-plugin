@@ -1,10 +1,11 @@
-import { GlyphPlugin } from '../plugins/glyph-plugin';
+import { GlyphPlugin } from '../plugin';
+
 import { Glyphmap } from './glyphmap';
 
 describe('Glyphmap', () => {
   let game: Phaser.Game;
   let scene: Phaser.Scene;
-  let map: Glyphmap;
+  //let map: Glyphmap;
 
   // Squelch console.log output.
   jest.spyOn(console, 'log').mockImplementation(() => undefined);
@@ -38,11 +39,17 @@ describe('Glyphmap', () => {
     game.textures.emit(Phaser.Textures.Events.READY);
   });
 
-  afterEach(() => map && map.destroy());
-
   it('instantiates', () => {
-    map = new Glyphmap(scene);
-    expect(map).toBeTruthy();
-    expect(map instanceof Glyphmap).toEqual(true);
+    const input = new Glyphmap(scene);
+
+    const actual = (() => {
+      const ok = input instanceof Glyphmap;
+      input.destroy();
+      return ok;
+    })();
+
+    const expected = true;
+
+    expect(actual).toEqual(expected);
   });
 });

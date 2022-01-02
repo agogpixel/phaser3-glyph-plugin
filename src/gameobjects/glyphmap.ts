@@ -1,3 +1,6 @@
+declare const WEBGL_RENDERER: unknown;
+declare const CANVAS_RENDERER: unknown;
+
 import {
   Alpha,
   BlendMode,
@@ -13,15 +16,63 @@ import {
 } from '@agogpixel/phaser3-ts-utils/mixins/gameobjects/components';
 import { CustomGameObject } from '@agogpixel/phaser3-ts-utils/mixins/gameobjects/custom-gameobject';
 
-import { GlyphPlugin, GlyphPluginEvent } from '../plugins/glyph-plugin';
-import type { CharLike } from '../utils/char';
-import type { ColorLike } from '../utils/color';
-import type { FontArgs } from '../utils/font';
-import { Font } from '../utils/font';
-import { getGlyphBytes, getGlyphCanvasData, glyphBytesLength } from '../utils/glyph';
+import { GlyphPlugin, GlyphPluginEvent } from '../plugin';
+import type { GlyphLike } from '../shared';
+import { bytesPerGlyph, createGlyphsBuffer, Font } from '../shared';
 
+/**
+ *
+ */
+export type GlyphmapFactory = (
+  ...args: ConstructorParameters<typeof Glyphmap> extends [unknown, ...infer R] ? R : never
+) => Glyphmap;
+
+/**
+ *
+ */
+export type GlyphmapCreator = (config?: GlyphmapConfig, addToScene?: boolean) => Glyphmap;
+
+/**
+ *
+ */
+export interface GlyphmapConfig extends Phaser.Types.GameObjects.GameObjectConfig {
+  /**
+   *
+   */
+  width?: number;
+
+  /**
+   *
+   */
+  height?: number;
+
+  /**
+   *
+   */
+  font?: Font;
+
+  /**
+   *
+   */
+  forceSquareRatio?: boolean;
+
+  /**
+   *
+   */
+  pluginKey?: string;
+}
+
+/**
+ *
+ */
 const bounds = new Phaser.Geom.Rectangle();
 
+/**
+ *
+ * @param map
+ * @param camera
+ * @returns
+ */
 function getCullBounds(map: Glyphmap, camera: Phaser.Cameras.Scene2D.Camera) {
   if (map.skipCull || map.scrollFactorX !== 1 || map.scrollFactorY !== 1) {
     return bounds.setTo(0, 0, map.widthInCells, map.heightInCells);
@@ -39,15 +90,63 @@ function getCullBounds(map: Glyphmap, camera: Phaser.Cameras.Scene2D.Camera) {
   return bounds.setTo(boundsLeft, boundsTop, boundsRight - boundsLeft, boundsBottom - boundsTop);
 }
 
-declare const WEBGL_RENDERER: unknown;
-declare const CANVAS_RENDERER: unknown;
+/**
+ *
+ * @param this
+ * @param args
+ * @returns
+ */
+export const glyphmapFactory: GlyphmapFactory = function glyphmapFactory(
+  this: Phaser.GameObjects.GameObjectFactory,
+  ...args
+) {
+  return this.displayList.add(new Glyphmap(this.scene, ...args)) as Glyphmap;
+};
 
+/**
+ *
+ * @param this
+ * @param config
+ * @param addToScene
+ * @returns
+ */
+export const glyphmapCreator: GlyphmapCreator = function glyphmapCreator(
+  this: Phaser.GameObjects.GameObjectCreator,
+  config: GlyphmapConfig = {},
+  addToScene?: boolean
+) {
+  const glyphmap = new Glyphmap(
+    this.scene,
+    0,
+    0,
+    config.width,
+    config.height,
+    config.font,
+    config.forceSquareRatio,
+    config.pluginKey
+  );
+
+  if (addToScene !== undefined) {
+    config.add = addToScene;
+  }
+
+  Phaser.GameObjects.BuildGameObject(this.scene, glyphmap, config);
+
+  return glyphmap;
+};
+
+/**
+ *
+ */
 let renderWebGL: (
   renderer: Phaser.Renderer.WebGL.WebGLRenderer,
   src: Glyphmap,
   camera: Phaser.Cameras.Scene2D.Camera
 ) => void = Phaser.Utils.NOOP;
 
+/**
+ *
+ */
 let renderCanvas: (
   renderer: Phaser.Renderer.Canvas.CanvasRenderer,
   src: Glyphmap,
@@ -94,6 +193,9 @@ if (typeof WEBGL_RENDERER) {
 
     const glyphs = src['glyphs'];
     const getKey = Glyphmap['getGlyphsKey'];
+    const getTextureFromBuffer = src.glyphPlugin['getTextureFromBuffer'].bind(
+      src.glyphPlugin
+    ) as typeof src.glyphPlugin['getTextureFromBuffer'];
 
     renderer.pipelines.preBatch(src);
 
@@ -105,13 +207,14 @@ if (typeof WEBGL_RENDERER) {
           continue;
         }
 
-        const glyphBytes = glyphs.get(glyphsKey);
+        const buffer = glyphs.get(glyphsKey);
+        const bufferLen = buffer.length;
 
-        for (let ix = 0; ix < glyphBytes.length; ix += glyphBytesLength) {
-          const [ch, fg, bg] = getGlyphCanvasData(glyphBytes, ix);
-          const texture = src.glyphPlugin.getTexture(ch, fg, bg, ...src.font).get().source.glTexture;
+        for (let ix = 0; ix < bufferLen; ix += bytesPerGlyph) {
+          const texture = getTextureFromBuffer(buffer.subarray(ix, bytesPerGlyph), src.font, src.forceSquareRatio).get()
+            .source.glTexture;
+
           const textureUnit = pipeline.setTexture2D(texture);
-          //const [frameWidth, frameHeight] = src.glyphPlugin.getFrameDimensions(ch, ...src.font);
           const tint = getTint(0xffffff, alpha);
 
           pipeline.batchTexture(
@@ -134,8 +237,8 @@ if (typeof WEBGL_RENDERER) {
             halfHeight,
             0,
             0,
-            cellWidth, // frameWidth,
-            cellHeight, // frameHeight,
+            cellWidth,
+            cellHeight,
             tint,
             tint,
             tint,
@@ -225,6 +328,9 @@ if (typeof CANVAS_RENDERER) {
 
     const glyphs = src['glyphs'];
     const getKey = Glyphmap['getGlyphsKey'];
+    const getTextureFromBuffer = src.glyphPlugin['getTextureFromBuffer'].bind(
+      src.glyphPlugin
+    ) as typeof src.glyphPlugin['getTextureFromBuffer'];
 
     for (let y = cullBoundsY; y < cullBoundsEndY; ++y) {
       for (let x = cullBoundsX; x < cullBoundsEndX; ++x) {
@@ -237,19 +343,22 @@ if (typeof CANVAS_RENDERER) {
         ctx.save();
         ctx.translate(x * cellWidth + halfWidth, y * cellHeight + halfHeight);
 
-        const glyphBytes = glyphs.get(glyphsKey);
+        const buffer = glyphs.get(glyphsKey);
+        const bufferLen = buffer.length;
 
-        for (let ix = 0; ix < glyphBytes.length; ix += glyphBytesLength) {
-          const [ch, fg, bg] = getGlyphCanvasData(glyphBytes, ix);
-          const texture = src.glyphPlugin.getTexture(ch, fg, bg, ...src.font);
-          //const [srcFrameWidth, srcFrameHeight] = src.glyphPlugin.getFrameDimensions(ch, ...src.font);
+        for (let ix = 0; ix < bufferLen; ix += bytesPerGlyph) {
+          const sourceImage = getTextureFromBuffer(
+            buffer.subarray(ix, bytesPerGlyph),
+            src.font,
+            src.forceSquareRatio
+          ).getSourceImage() as HTMLImageElement | HTMLCanvasElement;
 
           ctx.drawImage(
-            texture.getSourceImage() as HTMLImageElement | HTMLCanvasElement,
+            sourceImage,
             0,
             0,
-            cellWidth, //srcFrameWidth,
-            cellHeight, //srcFrameHeight,
+            sourceImage.width,
+            sourceImage.height,
             -halfWidth,
             -halfHeight,
             cellWidth,
@@ -265,6 +374,9 @@ if (typeof CANVAS_RENDERER) {
   };
 }
 
+/**
+ *
+ */
 export class Glyphmap extends CustomGameObject(
   Alpha,
   BlendMode,
@@ -278,160 +390,298 @@ export class Glyphmap extends CustomGameObject(
   Transform,
   Visible
 ) {
+  /**
+   *
+   * @param x
+   * @param y
+   * @returns
+   */
   private static getGlyphsKey(x: number, y: number) {
     return `${x},${y}`;
   }
 
+  /**
+   *
+   */
   readonly heightInCells: number;
 
+  /**
+   *
+   */
   readonly widthInCells: number;
 
+  /**
+   *
+   */
   cullPaddingX = 1;
 
+  /**
+   *
+   */
   cullPaddingY = 1;
 
+  /**
+   *
+   */
   skipCull = false;
 
+  /**
+   *
+   */
   protected readonly renderCanvas = renderCanvas;
 
+  /**
+   *
+   */
   protected readonly renderWebGL = renderWebGL;
 
+  /**
+   *
+   */
   private readonly glyphs = new Map<string, Uint8Array>();
 
+  /**
+   *
+   */
   private currentCellHeight: number;
 
+  /**
+   *
+   */
   private currentCellWidth: number;
 
+  /**
+   *
+   */
   private currentFont: Font;
 
+  /**
+   *
+   */
   private currentGlyphPlugin: GlyphPlugin;
 
+  /**
+   *
+   */
+  private currentForceSquareRatio: boolean;
+
+  /**
+   *
+   */
   get cellWidth() {
     return this.currentCellWidth;
   }
 
+  /**
+   *
+   */
   get cellHeight() {
     return this.currentCellHeight;
   }
 
-  get font() {
-    return this.currentFont.args;
+  /**
+   *
+   */
+  get font(): Readonly<Font> {
+    return this.currentFont;
+  }
+  set font(value: Font) {
+    this.setFont(value);
   }
 
-  set font(value: FontArgs) {
-    this.setFont(...value);
+  /**
+   *
+   */
+  get forceSquareRatio() {
+    return this.currentForceSquareRatio;
+  }
+  set forceSquareRatio(value: boolean) {
+    this.setForceSquareRatio(value);
   }
 
+  /**
+   *
+   */
   get glyphPlugin() {
     return this.currentGlyphPlugin;
   }
-
   set glyphPlugin(value: GlyphPlugin) {
     this.setGlyphPlugin(value);
   }
 
+  /**
+   *
+   * @param scene
+   * @param x
+   * @param y
+   * @param width
+   * @param height
+   * @param font
+   * @param forceSquareRatio
+   * @param pluginKey
+   */
   constructor(
     scene: Phaser.Scene,
     x = 0,
     y = 0,
     width = 80,
     height = 25,
-    fontArgs: FontArgs = [24, 'monospace'],
+    font = new Font(24, 'monospace'),
+    forceSquareRatio = false,
     pluginKey?: string
   ) {
     super(scene, 'Glyphmap');
 
-    this.currentGlyphPlugin = (
-      typeof pluginKey === 'string'
-        ? scene.game.plugins.get(pluginKey, true) || GlyphPlugin.findPlugin(scene.plugins)
-        : GlyphPlugin.findPlugin(scene.plugins)
-    ) as GlyphPlugin;
+    this.currentGlyphPlugin = GlyphPlugin.findPlugin(scene.game.plugins, pluginKey);
 
     this.widthInCells = Math.floor(width < 0 ? 0 : width);
     this.heightInCells = Math.floor(height < 0 ? 0 : height);
 
-    this.currentFont = new Font(...fontArgs);
+    this.currentFont = Font.clone(font);
+    this.currentForceSquareRatio = forceSquareRatio;
 
     this.setOrigin(0).setPosition(x, y).updateDimensions().initPipeline(undefined);
 
     this.currentGlyphPlugin
-      .on(GlyphPluginEvent.MeasurementCh, this.updateDimensions, this)
+      .on(GlyphPluginEvent.Update, this.updateDimensions, this)
       .once(GlyphPluginEvent.Destroy, this.glyphPluginDestroyEventListener, this);
   }
 
+  /**
+   *
+   * @param x
+   * @param y
+   * @returns
+   */
   checkBounds(x: number, y: number) {
     return x >= 0 && x < this.widthInCells && y >= 0 && y < this.heightInCells;
   }
 
+  /**
+   *
+   * @returns
+   */
   clear() {
     this.glyphs.clear();
     return this;
   }
 
+  /**
+   *
+   * @param x
+   * @param y
+   * @returns
+   */
   delete(x: number, y: number) {
     this.glyphs.delete(Glyphmap.getGlyphsKey(x, y));
+    return this;
   }
 
-  draw(x: number, y: number, glyphs: [CharLike, ColorLike, ColorLike?][]) {
+  /**
+   *
+   * @param x
+   * @param y
+   * @param glyphs
+   * @returns
+   */
+  set(x: number, y: number, glyphs: GlyphLike[]) {
     if (!this.checkBounds(x, y) || !glyphs.length) {
       return this;
     }
 
-    const data = new Uint8Array(glyphs.length * glyphBytesLength);
-
-    for (let ix = 0; ix < glyphs.length; ++ix) {
-      data.set(getGlyphBytes(...glyphs[ix]), ix * glyphBytesLength);
+    if (!glyphs.length) {
+      return this.delete(x, y);
     }
 
-    this.glyphs.set(Glyphmap.getGlyphsKey(x, y), data);
+    this.glyphs.set(Glyphmap.getGlyphsKey(x, y), createGlyphsBuffer(glyphs));
 
     return this;
   }
 
+  /**
+   *
+   * @param paddingX
+   * @param paddingY
+   * @returns
+   */
   setCullPadding(paddingX = 1, paddingY = 1) {
     this.cullPaddingX = paddingX;
     this.cullPaddingY = paddingY;
     return this;
   }
 
-  setFont(...args: FontArgs) {
-    this.currentFont = new Font(...args);
+  /**
+   *
+   * @param font
+   * @returns
+   */
+  setFont(font: Font) {
+    this.currentFont = Font.clone(font);
     return this.updateDimensions();
   }
 
+  /**
+   *
+   * @param value
+   * @returns
+   */
+  setForceSquareRatio(value = true) {
+    this.currentForceSquareRatio = value;
+    return this.updateDimensions();
+  }
+
+  /**
+   *
+   * @param plugin
+   * @returns
+   */
   setGlyphPlugin(plugin: GlyphPlugin) {
     this.currentGlyphPlugin
-      .off(GlyphPluginEvent.MeasurementCh, this.updateDimensions, this)
+      .off(GlyphPluginEvent.Update, this.updateDimensions, this)
       .off(GlyphPluginEvent.Destroy, this.glyphPluginDestroyEventListener, this);
 
     this.currentGlyphPlugin = plugin
-      .on(GlyphPluginEvent.MeasurementCh, this.updateDimensions, this)
+      .on(GlyphPluginEvent.Update, this.updateDimensions, this)
       .once(GlyphPluginEvent.Destroy, this.glyphPluginDestroyEventListener, this);
 
     return this.updateDimensions();
   }
 
+  /**
+   *
+   * @param value
+   * @returns
+   */
   setSkipCull(value = true) {
     this.skipCull = value;
     return this;
   }
 
+  /**
+   *
+   * @returns
+   */
   private glyphPluginDestroyEventListener() {
     if (!this.scene) {
       return;
     }
 
     this.currentGlyphPlugin = (GlyphPlugin.findPlugin(this.scene.plugins) as GlyphPlugin).on(
-      GlyphPluginEvent.MeasurementCh,
+      GlyphPluginEvent.Update,
       this.updateDimensions,
       this
     );
   }
 
+  /**
+   *
+   * @returns
+   */
   private updateDimensions() {
     const [width, height] = this.currentGlyphPlugin.getFrameDimensions(
       this.currentGlyphPlugin.measurementCh,
-      ...this.currentFont.args
+      this.font,
+      this.currentForceSquareRatio
     );
 
     this.currentCellWidth = width;
