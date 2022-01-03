@@ -8,7 +8,7 @@ describe('Glyphmap', () => {
   let scene: Phaser.Scene;
 
   // Squelch console.log output.
-  //jest.spyOn(console, 'log').mockImplementation(() => undefined);
+  jest.spyOn(console, 'log').mockImplementation(() => undefined);
   // Running game calls window.focus method.
   jest.spyOn(window, 'focus').mockImplementation(() => undefined);
 
