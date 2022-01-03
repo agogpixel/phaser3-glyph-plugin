@@ -35,6 +35,7 @@ describe('GlyphPlugin', () => {
       const expected = true;
 
       expect(actual).toEqual(expected);
+      input.destroy();
     });
 
     it('gets measurementCh', () => {
@@ -43,6 +44,7 @@ describe('GlyphPlugin', () => {
       const expected = 'W';
 
       expect(actual).toEqual(expected);
+      input.destroy();
     });
 
     it('sets measurementCh', () => {
@@ -50,7 +52,9 @@ describe('GlyphPlugin', () => {
 
       const actual = (() => {
         input[0].measurementCh = input[1];
-        return input[0].measurementCh;
+        const result = input[0].measurementCh;
+        input[0].destroy();
+        return result;
       })();
 
       const expected = input[1];
@@ -64,6 +68,7 @@ describe('GlyphPlugin', () => {
       const expected = false;
 
       expect(actual).toEqual(expected);
+      input.destroy();
     });
 
     it('sets advancedTextMetrics', () => {
@@ -71,7 +76,9 @@ describe('GlyphPlugin', () => {
 
       const actual = (() => {
         input[0].advancedTextMetrics = input[1];
-        return input[0].advancedTextMetrics;
+        const result = input[0].advancedTextMetrics;
+        input[0].destroy();
+        return result;
       })();
 
       const expected = input[1];
@@ -84,7 +91,9 @@ describe('GlyphPlugin', () => {
 
       const actual = (() => {
         const spy = jest.spyOn(GlyphPlugin, 'getFrameDimensions');
-        new GlyphPlugin(game.plugins).getFrameDimensions(...input);
+        const plugin = new GlyphPlugin(game.plugins);
+        plugin.getFrameDimensions(...input);
+        plugin.destroy();
         return spy;
       })();
 
@@ -98,7 +107,9 @@ describe('GlyphPlugin', () => {
 
       const actual = (() => {
         const spy = jest.spyOn(GlyphPlugin, 'getTexture');
-        new GlyphPlugin(game.plugins).getTexture(...input);
+        const plugin = new GlyphPlugin(game.plugins);
+        plugin.getTexture(...input);
+        plugin.destroy();
         return spy;
       })();
 
@@ -112,7 +123,9 @@ describe('GlyphPlugin', () => {
 
       const actual = (() => {
         const spy = jest.spyOn(GlyphPlugin, 'getTextureKey');
-        new GlyphPlugin(game.plugins).getTextureKey(...input);
+        const plugin = new GlyphPlugin(game.plugins);
+        plugin.getTextureKey(...input);
+        plugin.destroy();
         return spy;
       })();
 
@@ -129,7 +142,9 @@ describe('GlyphPlugin', () => {
 
       const actual = (() => {
         const spy = jest.spyOn(GlyphPlugin, 'getTextureFromBuffer' as never);
-        new GlyphPlugin(game.plugins)['getTextureFromBuffer'](...input);
+        const plugin = new GlyphPlugin(game.plugins);
+        plugin['getTextureFromBuffer'](...input);
+        plugin.destroy();
         return spy;
       })();
 
@@ -297,12 +312,11 @@ describe('GlyphPlugin', () => {
         const input = [GlyphPluginEvent.Update, () => ++count] as const;
 
         const actual = (() => {
-          const plugin = new GlyphPlugin(game.plugins);
-
-          plugin
+          new GlyphPlugin(game.plugins)
             .once(...input)
             .setAdvancedTextMetrics()
-            .setAdvancedTextMetrics(false);
+            .setAdvancedTextMetrics(false)
+            .destroy();
 
           return count;
         })();
@@ -317,8 +331,7 @@ describe('GlyphPlugin', () => {
         const input = [GlyphPluginEvent.Destroy, () => ++count] as const;
 
         const actual = (() => {
-          const plugin = new GlyphPlugin(game.plugins);
-          plugin.once(...input).destroy();
+          new GlyphPlugin(game.plugins).once(...input).destroy();
           return count;
         })();
 
@@ -344,7 +357,8 @@ describe('GlyphPlugin', () => {
           plugin
             .on(...input)
             .setAdvancedTextMetrics()
-            .setAdvancedTextMetrics(false);
+            .setAdvancedTextMetrics(false)
+            .destroy();
 
           return count;
         })();
@@ -455,9 +469,9 @@ describe('GlyphPlugin', () => {
 
       const actual = (() => {
         const glyphmap = scene.add.glyphmap(...input);
-        const ok = scene.children.exists(glyphmap);
+        const result = scene.children.exists(glyphmap);
         glyphmap.destroy();
-        return ok;
+        return result;
       })();
 
       const expected = true;
@@ -478,9 +492,9 @@ describe('GlyphPlugin', () => {
 
       const actual = (() => {
         const glyphmap = scene.make.glyphmap(...input);
-        const ok = !scene.children.exists(glyphmap) && glyphmap instanceof Glyphmap;
+        const result = !scene.children.exists(glyphmap) && glyphmap instanceof Glyphmap;
         glyphmap.destroy();
-        return ok;
+        return result;
       })();
 
       const expected = true;
@@ -493,9 +507,9 @@ describe('GlyphPlugin', () => {
 
       const actual = (() => {
         const glyphmap = scene.make.glyphmap(...input);
-        const ok = scene.children.exists(glyphmap);
+        const result = scene.children.exists(glyphmap);
         glyphmap.destroy();
-        return ok;
+        return result;
       })();
 
       const expected = true;

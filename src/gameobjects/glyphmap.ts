@@ -64,34 +64,6 @@ export interface GlyphmapConfig extends Phaser.Types.GameObjects.GameObjectConfi
 
 /**
  *
- */
-const bounds = new Phaser.Geom.Rectangle();
-
-/**
- *
- * @param map
- * @param camera
- * @returns
- */
-function getCullBounds(map: Glyphmap, camera: Phaser.Cameras.Scene2D.Camera) {
-  if (map.skipCull || map.scrollFactorX !== 1 || map.scrollFactorY !== 1) {
-    return bounds.setTo(0, 0, map.widthInCells, map.heightInCells);
-  }
-
-  const cellW = Math.floor(map.cellWidth * map.scaleX);
-  const cellH = Math.floor(map.cellHeight * map.scaleY);
-
-  const boundsLeft = Phaser.Math.Snap.Floor(camera.worldView.x - map.x, cellW, 0, true) - map.cullPaddingX;
-  const boundsRight = Phaser.Math.Snap.Ceil(camera.worldView.right - map.x, cellW, 0, true) + map.cullPaddingX;
-
-  const boundsTop = Phaser.Math.Snap.Floor(camera.worldView.y - map.y, cellH, 0, true) - map.cullPaddingY;
-  const boundsBottom = Phaser.Math.Snap.Ceil(camera.worldView.bottom - map.y, cellH, 0, true) + map.cullPaddingY;
-
-  return bounds.setTo(boundsLeft, boundsTop, boundsRight - boundsLeft, boundsBottom - boundsTop);
-}
-
-/**
- *
  * @param this
  * @param args
  * @returns
@@ -134,6 +106,34 @@ export const glyphmapCreator: GlyphmapCreator = function glyphmapCreator(
 
   return glyphmap;
 };
+
+/**
+ *
+ */
+const bounds = new Phaser.Geom.Rectangle();
+
+/**
+ *
+ * @param map
+ * @param camera
+ * @returns
+ */
+function getCullBounds(map: Glyphmap, camera: Phaser.Cameras.Scene2D.Camera) {
+  if (map.skipCull || map.scrollFactorX !== 1 || map.scrollFactorY !== 1) {
+    return bounds.setTo(0, 0, map.widthInCells, map.heightInCells);
+  }
+
+  const cellW = Math.floor(map.cellWidth * map.scaleX);
+  const cellH = Math.floor(map.cellHeight * map.scaleY);
+
+  const boundsLeft = Phaser.Math.Snap.Floor(camera.worldView.x - map.x, cellW, 0, true) - map.cullPaddingX;
+  const boundsRight = Phaser.Math.Snap.Ceil(camera.worldView.right - map.x, cellW, 0, true) + map.cullPaddingX;
+
+  const boundsTop = Phaser.Math.Snap.Floor(camera.worldView.y - map.y, cellH, 0, true) - map.cullPaddingY;
+  const boundsBottom = Phaser.Math.Snap.Ceil(camera.worldView.bottom - map.y, cellH, 0, true) + map.cullPaddingY;
+
+  return bounds.setTo(boundsLeft, boundsTop, boundsRight - boundsLeft, boundsBottom - boundsTop);
+}
 
 /**
  *
@@ -211,8 +211,11 @@ if (typeof WEBGL_RENDERER) {
         const bufferLen = buffer.length;
 
         for (let ix = 0; ix < bufferLen; ix += bytesPerGlyph) {
-          const texture = getTextureFromBuffer(buffer.subarray(ix, bytesPerGlyph), src.font, src.forceSquareRatio).get()
-            .source.glTexture;
+          const texture = getTextureFromBuffer(
+            buffer.subarray(ix, ix + bytesPerGlyph),
+            src.font,
+            src.forceSquareRatio
+          ).get().source.glTexture;
 
           const textureUnit = pipeline.setTexture2D(texture);
           const tint = getTint(0xffffff, alpha);
@@ -348,7 +351,7 @@ if (typeof CANVAS_RENDERER) {
 
         for (let ix = 0; ix < bufferLen; ix += bytesPerGlyph) {
           const sourceImage = getTextureFromBuffer(
-            buffer.subarray(ix, bytesPerGlyph),
+            buffer.subarray(ix, ix + bytesPerGlyph),
             src.font,
             src.forceSquareRatio
           ).getSourceImage() as HTMLImageElement | HTMLCanvasElement;
@@ -540,11 +543,7 @@ export class Glyphmap extends CustomGameObject(
     this.currentFont = Font.clone(font);
     this.currentForceSquareRatio = forceSquareRatio;
 
-    this.setOrigin(0).setPosition(x, y).updateDimensions().initPipeline(undefined);
-
-    this.currentGlyphPlugin
-      .on(GlyphPluginEvent.Update, this.updateDimensions, this)
-      .once(GlyphPluginEvent.Destroy, this.glyphPluginDestroyEventListener, this);
+    this.setOrigin(0).setPosition(x, y).updateDimensions().addGlyphPluginEventListeners().initPipeline(undefined);
   }
 
   /**
@@ -578,6 +577,15 @@ export class Glyphmap extends CustomGameObject(
   }
 
   /**
+   * {@inheritdoc}
+   * @param fromScene `True` if this Game Object is being destroyed by the Scene, `false` if not. Default false.
+   */
+  destroy(fromScene?: boolean) {
+    super.destroy(fromScene);
+    this.removeGlyphPluginEventListeners();
+  }
+
+  /**
    *
    * @param x
    * @param y
@@ -585,7 +593,7 @@ export class Glyphmap extends CustomGameObject(
    * @returns
    */
   set(x: number, y: number, glyphs: GlyphLike[]) {
-    if (!this.checkBounds(x, y) || !glyphs.length) {
+    if (!this.checkBounds(x, y)) {
       return this;
     }
 
@@ -636,15 +644,9 @@ export class Glyphmap extends CustomGameObject(
    * @returns
    */
   setGlyphPlugin(plugin: GlyphPlugin) {
-    this.currentGlyphPlugin
-      .off(GlyphPluginEvent.Update, this.updateDimensions, this)
-      .off(GlyphPluginEvent.Destroy, this.glyphPluginDestroyEventListener, this);
-
-    this.currentGlyphPlugin = plugin
-      .on(GlyphPluginEvent.Update, this.updateDimensions, this)
-      .once(GlyphPluginEvent.Destroy, this.glyphPluginDestroyEventListener, this);
-
-    return this.updateDimensions();
+    this.removeGlyphPluginEventListeners();
+    this.currentGlyphPlugin = plugin;
+    return this.addGlyphPluginEventListeners().updateDimensions();
   }
 
   /**
@@ -661,16 +663,41 @@ export class Glyphmap extends CustomGameObject(
    *
    * @returns
    */
+  private addGlyphPluginEventListeners() {
+    if (this.currentGlyphPlugin) {
+      this.currentGlyphPlugin
+        .on(GlyphPluginEvent.Update, this.updateDimensions, this)
+        .once(GlyphPluginEvent.Destroy, this.glyphPluginDestroyEventListener, this);
+    }
+
+    return this;
+  }
+
+  /**
+   *
+   * @returns
+   */
   private glyphPluginDestroyEventListener() {
     if (!this.scene) {
       return;
     }
 
-    this.currentGlyphPlugin = (GlyphPlugin.findPlugin(this.scene.plugins) as GlyphPlugin).on(
-      GlyphPluginEvent.Update,
-      this.updateDimensions,
-      this
-    );
+    this.currentGlyphPlugin = GlyphPlugin.findPlugin(this.scene.plugins);
+    this.addGlyphPluginEventListeners();
+  }
+
+  /**
+   *
+   * @returns
+   */
+  private removeGlyphPluginEventListeners() {
+    if (this.currentGlyphPlugin) {
+      this.currentGlyphPlugin
+        .off(GlyphPluginEvent.Update, this.updateDimensions, this)
+        .off(GlyphPluginEvent.Destroy, this.glyphPluginDestroyEventListener, this, true);
+    }
+
+    return this;
   }
 
   /**

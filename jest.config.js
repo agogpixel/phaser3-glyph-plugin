@@ -1,7 +1,7 @@
 module.exports = {
   preset: 'ts-jest/presets/js-with-ts',
   testEnvironment: 'jsdom',
-  setupFiles: ['jest-canvas-mock'],
+  setupFiles: ['jest-webgl-canvas-mock'],
   setupFilesAfterEnv: ['<rootDir>/test/test-setup.ts'],
   verbose: true,
   collectCoverageFrom: ['src/**/*.ts', '!src/**/index.ts'],
