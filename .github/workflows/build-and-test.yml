@@ -79,7 +79,7 @@ jobs:
         run: npm run build-docs
         shell: bash
       - name: Build Demos
-        run: npm run npm run build-demos && mv dist/demos dist/docs/demos
+        run: npm run build-demos && mv dist/demos dist/docs/demos
         shell: bash
       - name: Fetch Coverage Artifacts
         uses: actions/download-artifact@v2
