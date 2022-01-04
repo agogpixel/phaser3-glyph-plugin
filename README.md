@@ -12,6 +12,12 @@ Live development with `jest --watch`
 npm start
 ```
 
+Live development on demos with `webpack-dever-server`
+
+```shell
+npm run start:demos
+```
+
 ### Lint
 
 Errors & warnings output to stdout via eslint:

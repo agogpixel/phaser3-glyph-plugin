@@ -41,6 +41,8 @@ yarn-error.log
 testem.log
 /typings
 .eslintcache
+.cavycache
+agogpixel-phaser3-glyph-plugin-*.tgz
 
 # System Files
 .DS_Store

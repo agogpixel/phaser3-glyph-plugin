@@ -132,9 +132,11 @@ module.exports = {
           }
         })
       : undefined,
-    new CopyWebpackPlugin({
-      patterns: demos ? [{ from: `${demosPath}/assets`, to: 'assets' }] : ['package.json', 'README.md', 'LICENSE']
-    })
+    demos
+      ? new CopyWebpackPlugin({
+          patterns: [{ from: `${demosPath}/assets`, to: 'assets' }]
+        })
+      : undefined
   ].filter(Boolean),
   devServer: {
     static: {
