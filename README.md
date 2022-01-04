@@ -67,7 +67,7 @@ Phaser 3 glyph plugin. Inspired by [rot.js](https://ondras.github.io/rot.js/hp/)
 
 ## Development
 
-Live development with jest watch mode:
+Live development with `jest` watch mode:
 
 ```shell
 npm start
