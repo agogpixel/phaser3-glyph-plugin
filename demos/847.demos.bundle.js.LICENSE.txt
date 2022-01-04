@@ -1,0 +1,25 @@
+/**
+ * @author       Joachim Grill <joachim@codeandweb.com>
+ * @author       Richard Davey <rich@photonstorm.com>
+ * @copyright    2018 CodeAndWeb GmbH
+ * @copyright    2020 Photon Storm Ltd.
+ * @license      {@link https://opensource.org/licenses/MIT|MIT License}
+ */
+
+/**
+ * @author       Richard Davey <rich@photonstorm.com>
+ * @author       Benjamin D. Richards <benjamindrichards@gmail.com>
+ * @copyright    2020 Photon Storm Ltd.
+ * @license      {@link https://opensource.org/licenses/MIT|MIT License}
+ */
+
+/**
+ * @author       Richard Davey <rich@photonstorm.com>
+ * @copyright    2020 Photon Storm Ltd.
+ * @license      {@link https://opensource.org/licenses/MIT|MIT License}
+ */
+
+/**
+ * @author       Stefan Hedman <schteppe@gmail.com> (http://steffe.se)
+ * @license      {@link https://opensource.org/licenses/MIT|MIT License}
+ */

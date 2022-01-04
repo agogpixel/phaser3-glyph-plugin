@@ -1,0 +1,2 @@
+/*! For license information please see 65.demos.bundle.js.LICENSE.txt */
+(self.webpackChunk_agogpixel_phaser3_glyph_plugin=self.webpackChunk_agogpixel_phaser3_glyph_plugin||[]).push([[65],{84146:(o,e,u)=>{o.exports={SoundManagerCreator:u(72875),Events:u(21577),BaseSound:u(93912),BaseSoundManager:u(84768),WebAudioSound:u(34630),WebAudioSoundManager:u(36083),HTML5AudioSound:u(8081),HTML5AudioSoundManager:u(13273),NoAudioSound:u(56925),NoAudioSoundManager:u(35384)}}}]);
