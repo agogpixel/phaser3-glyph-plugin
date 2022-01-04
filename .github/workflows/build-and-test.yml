@@ -73,6 +73,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
+      - name: Setup Dependencies
+        uses: ./.github/actions/setup-dependencies
       - name: Fetch Coverage Artifacts
         uses: actions/download-artifact@v2
         with:

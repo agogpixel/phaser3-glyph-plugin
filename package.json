@@ -35,7 +35,7 @@
   "bugs": {
     "url": "https://github.com/agogpixel/phaser3-glyph-plugin/issues"
   },
-  "homepage": "https://github.com/agogpixel/phaser3-glyph-plugin#readme",
+  "homepage": "https://agogpixel.github.io/phaser3-glyph-plugin/",
   "dependencies": {
     "@agogpixel/phaser3-ts-utils": "0.2.0-alpha--dev-build-1639454098",
     "color-string": "^1.9.0"
