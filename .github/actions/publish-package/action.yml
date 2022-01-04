@@ -1,0 +1,33 @@
+name: Publish Package
+description: Publishes package tarball to all remote package registries.
+inputs:
+  npm-auth-token:
+    description: NPM Auth Token.
+    required: true
+    default: ''
+  github-auth-token:
+    description: GitHub Auth Token.
+    required: true
+    default: ''
+  package-artifacts-name:
+    description: Name of previously uploaded package artifacts.
+    required: false
+    default: package-artifacts
+runs:
+  using: composite
+  steps:
+    - name: Fetch Package Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: ${{ inputs.package-artifacts-name }}
+    - name: Publish Package (NPM)
+      uses: ./.github/actions/publish-package/to-registry
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.npm-auth-token }}
+    - name: Publish Package (GitHub)
+      uses: ./.github/actions/publish-package/to-registry
+      with:
+        registry-name: GitHub
+        registry-url: https://npm.pkg.github.com
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.github-auth-token }}

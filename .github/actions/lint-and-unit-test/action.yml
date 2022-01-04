@@ -1,0 +1,54 @@
+name: Lint & Unit Test
+description: Lints source code, performs unit tests, & archives coverage report.
+inputs:
+  auth:
+    description: Required. A secret token with the gist scope.
+    required: true
+  gistID:
+    description: Required. The ID of the target gist.
+    required: true
+  repo-name:
+    description: Required. Repository name used for naming coverage badge within gist.
+    required: true
+  coverage-report-name:
+    description: Name under which to upload coverage report.
+    required: false
+    default: coverage
+runs:
+  using: composite
+  steps:
+    - name: Lint
+      run: npm run lint
+      shell: bash
+    - name: Unit Test
+      run: COVERAGE=$(npm test | tee /dev/tty | grep -oP "^Lines[[:space:]]*:[[:space:]]*\K[^%]*") && echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
+      shell: 'script --return --quiet --command "bash {0}"'
+    - name: Parse Branch Name & Coverage Percentage
+      run: |
+        IFS='/' read -ra PATHS <<< "${{ github.ref }}"
+        BRANCH_NAME="${PATHS[1]}_${PATHS[2]}"
+        echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+
+        if (( $(echo "${{ env.COVERAGE }} >= 90" | bc -l) )); then
+          echo "COVERAGE_COLOR=green" >> $GITHUB_ENV
+        elif (( $(echo "${{ env.COVERAGE }} >= 80" | bc -l) )); then
+          echo "COVERAGE_COLOR=yellow" >> $GITHUB_ENV
+        else
+          echo "COVERAGE_COLOR=red" >> $GITHUB_ENV
+        fi
+      shell: bash
+    - name: Archive Coverage Report
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ inputs.coverage-report-name }}
+        path: coverage
+    - name: Create Badge
+      uses: schneegans/dynamic-badges-action@v1.1.0
+      with:
+        auth: '${{ inputs.auth }}'
+        gistID: '${{ inputs.gistID }}'
+        filename: '${{ inputs.repo-name }}__${{ env.BRANCH_NAME }}.json'
+        label: Coverage
+        message: '${{ env.COVERAGE }}%'
+        color: '${{ env.COVERAGE_COLOR }}'
+        namedLogo: jest

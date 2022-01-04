@@ -1,0 +1,33 @@
+name: Create Tarball
+description: Creates & uploads package tarball.
+inputs:
+  build-artifacts-name:
+    description: Name of previously uploaded build artifacts.
+    required: false
+    default: dist
+  package-artifacts-name:
+    description: Name of package artifacts to be uploaded.
+    required: false
+    default: package-artifacts
+  release:
+    description: Flag indicating package will be versioned & tagged for non-development release channels.
+    required: false
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - name: Fetch Build Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: ${{ inputs.build-artifacts-name }}
+        path: dist
+    - name: Create Tarball
+      run: if [ "${{ inputs.release }}" == 'true' ]; then npm run create-tarball -- --release; else npm run create-tarball; fi
+      shell: bash
+    - name: Upload Package Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ inputs.package-artifacts-name }}
+        path: |
+          *.tgz
+          .cavycache
