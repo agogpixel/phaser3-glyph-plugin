@@ -5,7 +5,7 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/test/test-setup.ts'],
   verbose: true,
   collectCoverageFrom: ['src/**/*.ts', '!src/**/index.ts'],
-  coverageReporters: ['text', 'html'],
+  coverageReporters: ['text', 'text-summary', 'html'],
   testPathIgnorePatterns: ['<rootDir>/demos/', '<rootDir>/dist/', '<rootDir>/test/smoke/'],
   moduleNameMapper: {
     '\\.(jpg|ico|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$':
