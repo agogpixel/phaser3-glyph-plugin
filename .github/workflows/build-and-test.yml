@@ -20,7 +20,7 @@ jobs:
         with:
           auth: ${{ secrets.GHP_TOKEN }}
           gistID: ${{ secrets.COVERAGE_BADGE_GIST_ID }}
-          repo-name: phaser3-ts-utils
+          repo-name: phaser3-glyph-plugin
   Build-And-Smoke-Test:
     name: Build & Smoke Test
     runs-on: ubuntu-latest
