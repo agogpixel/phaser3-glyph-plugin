@@ -10,6 +10,8 @@
 
 Phaser 3 glyph plugin. Inspired by [rot.js](https://ondras.github.io/rot.js/hp/) canvas-based ASCII display.
 
+> **<a href="https://agogpixel.github.io/phaser3-glyph-plugin/demos/" target="_blank">DEMOS</a>**
+
 ## Getting Started
 
 1.  Install the package:
