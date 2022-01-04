@@ -86,13 +86,13 @@ npm run lint      # Report issues.
 npm run lint-fix  # Fix issues.
 ```
 
-Unit test & create coverage report in coverage:
+Unit test & create coverage report in `coverage/`:
 
 ```shell
 npm test
 ```
 
-Build consumable .js, .js.map, & .d.ts files to dist; prepare for further packaging:
+Build consumable `.js`, `.js.map`, & `.d.ts` files to `dist/`; prepare for further packaging:
 
 ```shell
 npm run build
@@ -104,7 +104,7 @@ Smoke test build:
 npm run smoke-test
 ```
 
-Create package tarball from dist:
+Create package tarball from `dist/`:
 
 ```shell
 npm run create-tarball               # Development stream.
