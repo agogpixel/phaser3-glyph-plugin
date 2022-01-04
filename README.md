@@ -6,11 +6,13 @@
 [![Downloads/week](https://img.shields.io/npm/dw/@agogpixel/phaser3-glyph-plugin.svg)](https://npmjs.org/package/@agogpixel/phaser3-glyph-plugin)
 [![License](https://img.shields.io/npm/l/@agogpixel/phaser3-glyph-plugin.svg)](https://github.com/agogpixel/phaser3-glyph-plugin/blob/main/LICENSE)
 
+> ⚠️ **INITIAL DEVELOPMENT** ⚠️
+
 <hr>
 
 Phaser 3 glyph plugin. Inspired by [rot.js](https://ondras.github.io/rot.js/hp/) canvas-based ASCII display.
 
-> **<a href="https://agogpixel.github.io/phaser3-glyph-plugin/demos/" target="_blank">DEMOS</a>**
+> 💥 **<a href="https://agogpixel.github.io/phaser3-glyph-plugin/demos/" target="_blank">DEMOS</a>**
 
 ## Getting Started
 
@@ -64,6 +66,10 @@ Phaser 3 glyph plugin. Inspired by [rot.js](https://ondras.github.io/rot.js/hp/)
         // ...
     });
     ```
+
+## Usage
+
+Under initial development. Please refer to the [API docs](https://agogpixel.github.io/phaser3-glyph-plugin/modules/index.html) & [demos](https://agogpixel.github.io/phaser3-glyph-plugin/demos/) for usage examples.
 
 ## Development
 
