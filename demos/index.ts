@@ -47,7 +47,7 @@ function indexHandler(notFound?: string) {
         demo[0] +
         '&renderer=' +
         renderer +
-        '&measure=W&advanced=false" target="_blank">' +
+        '&measure=W&advanced=false&square=false" target="_blank">' +
         renderer +
         '</a></li>';
     }
