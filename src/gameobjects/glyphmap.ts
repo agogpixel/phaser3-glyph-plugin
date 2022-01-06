@@ -191,31 +191,24 @@ if (typeof WEBGL_RENDERER) {
     const halfWidth = cellWidth * 0.5;
     const halfHeight = cellHeight * 0.5;
 
-    const glyphs = src['glyphs'];
-    const getKey = Glyphmap['getGlyphsKey'];
-    const getTextureFromBuffer = src.glyphPlugin['getTextureFromBuffer'].bind(
-      src.glyphPlugin
-    ) as typeof src.glyphPlugin['getTextureFromBuffer'];
+    const textures = src['textures'];
+    const getKey = Glyphmap['getKey'];
 
     renderer.pipelines.preBatch(src);
 
     for (let indexY = cullBoundsY; indexY < cullBoundsEndY; ++indexY) {
       for (let indexX = cullBoundsX; indexX < cullBoundsEndX; ++indexX) {
-        const glyphsKey = getKey(indexX, indexY);
+        const key = getKey(indexX, indexY);
 
-        if (!glyphs.has(glyphsKey)) {
+        if (!textures.has(key)) {
           continue;
         }
 
-        const buffer = glyphs.get(glyphsKey);
-        const bufferLen = buffer.length;
+        const cellTextures = textures.get(key);
+        const cellTexturesLen = cellTextures.length;
 
-        for (let ix = 0; ix < bufferLen; ix += bytesPerGlyph) {
-          const texture = getTextureFromBuffer(
-            buffer.subarray(ix, ix + bytesPerGlyph),
-            src.font,
-            src.forceSquareRatio
-          ).get().source.glTexture;
+        for (let ix = 0; ix < cellTexturesLen; ++ix) {
+          const texture = cellTextures[ix].get().source.glTexture;
 
           const textureUnit = pipeline.setTexture2D(texture);
           const tint = getTint(0xffffff, alpha);
@@ -329,32 +322,25 @@ if (typeof CANVAS_RENDERER) {
     const halfWidth = cellWidth * 0.5;
     const halfHeight = cellHeight * 0.5;
 
-    const glyphs = src['glyphs'];
-    const getKey = Glyphmap['getGlyphsKey'];
-    const getTextureFromBuffer = src.glyphPlugin['getTextureFromBuffer'].bind(
-      src.glyphPlugin
-    ) as typeof src.glyphPlugin['getTextureFromBuffer'];
+    const textures = src['textures'];
+    const getKey = Glyphmap['getKey'];
 
     for (let y = cullBoundsY; y < cullBoundsEndY; ++y) {
       for (let x = cullBoundsX; x < cullBoundsEndX; ++x) {
-        const glyphsKey = getKey(x, y);
+        const key = getKey(x, y);
 
-        if (!glyphs.has(glyphsKey)) {
+        if (!textures.has(key)) {
           continue;
         }
 
         ctx.save();
         ctx.translate(x * cellWidth + halfWidth, y * cellHeight + halfHeight);
 
-        const buffer = glyphs.get(glyphsKey);
-        const bufferLen = buffer.length;
+        const cellTextures = textures.get(key);
+        const cellTexturesLen = cellTextures.length;
 
-        for (let ix = 0; ix < bufferLen; ix += bytesPerGlyph) {
-          const sourceImage = getTextureFromBuffer(
-            buffer.subarray(ix, ix + bytesPerGlyph),
-            src.font,
-            src.forceSquareRatio
-          ).getSourceImage() as HTMLImageElement | HTMLCanvasElement;
+        for (let ix = 0; ix < cellTexturesLen; ++ix) {
+          const sourceImage = cellTextures[ix].getSourceImage() as HTMLImageElement | HTMLCanvasElement;
 
           ctx.drawImage(
             sourceImage,
@@ -399,7 +385,7 @@ export class Glyphmap extends CustomGameObject(
    * @param y
    * @returns
    */
-  private static getGlyphsKey(x: number, y: number) {
+  private static getKey(x: number, y: number) {
     return `${x},${y}`;
   }
 
@@ -442,6 +428,11 @@ export class Glyphmap extends CustomGameObject(
    *
    */
   private readonly glyphs = new Map<string, Uint8Array>();
+
+  /**
+   *
+   */
+  private readonly textures = new Map<string, Phaser.Textures.Texture[]>();
 
   /**
    *
@@ -543,7 +534,7 @@ export class Glyphmap extends CustomGameObject(
     this.currentFont = Font.clone(font);
     this.currentForceSquareRatio = forceSquareRatio;
 
-    this.setOrigin(0).setPosition(x, y).updateDimensions().addGlyphPluginEventListeners().initPipeline(undefined);
+    this.setOrigin(0).setPosition(x, y).refresh().addGlyphPluginEventListeners().initPipeline(undefined);
   }
 
   /**
@@ -562,6 +553,8 @@ export class Glyphmap extends CustomGameObject(
    */
   clear() {
     this.glyphs.clear();
+    this.textures.clear();
+
     return this;
   }
 
@@ -572,7 +565,11 @@ export class Glyphmap extends CustomGameObject(
    * @returns
    */
   delete(x: number, y: number) {
-    this.glyphs.delete(Glyphmap.getGlyphsKey(x, y));
+    const key = Glyphmap.getKey(x, y);
+
+    this.glyphs.delete(key);
+    this.textures.delete(key);
+
     return this;
   }
 
@@ -601,7 +598,18 @@ export class Glyphmap extends CustomGameObject(
       return this.delete(x, y);
     }
 
-    this.glyphs.set(Glyphmap.getGlyphsKey(x, y), createGlyphsBuffer(glyphs));
+    const key = Glyphmap.getKey(x, y);
+
+    const glyphPlugin = this.glyphPlugin;
+    const font = this.currentFont;
+    const forceSquareRatio = this.currentForceSquareRatio;
+
+    this.glyphs.set(key, createGlyphsBuffer(glyphs));
+
+    this.textures.set(
+      key,
+      glyphs.map((glyph) => glyphPlugin.getTexture([glyph], font, forceSquareRatio))
+    );
 
     return this;
   }
@@ -625,7 +633,7 @@ export class Glyphmap extends CustomGameObject(
    */
   setFont(font: Font) {
     this.currentFont = Font.clone(font);
-    return this.updateDimensions();
+    return this.refresh();
   }
 
   /**
@@ -635,7 +643,7 @@ export class Glyphmap extends CustomGameObject(
    */
   setForceSquareRatio(value = true) {
     this.currentForceSquareRatio = value;
-    return this.updateDimensions();
+    return this.refresh();
   }
 
   /**
@@ -646,7 +654,7 @@ export class Glyphmap extends CustomGameObject(
   setGlyphPlugin(plugin: GlyphPlugin) {
     this.removeGlyphPluginEventListeners();
     this.currentGlyphPlugin = plugin;
-    return this.addGlyphPluginEventListeners().updateDimensions();
+    return this.refresh().addGlyphPluginEventListeners();
   }
 
   /**
@@ -666,7 +674,7 @@ export class Glyphmap extends CustomGameObject(
   private addGlyphPluginEventListeners() {
     if (this.currentGlyphPlugin) {
       this.currentGlyphPlugin
-        .on(GlyphPluginEvent.Update, this.updateDimensions, this)
+        .on(GlyphPluginEvent.Update, this.glyphPluginUpdateEventListener, this)
         .once(GlyphPluginEvent.Destroy, this.glyphPluginDestroyEventListener, this);
     }
 
@@ -690,10 +698,26 @@ export class Glyphmap extends CustomGameObject(
    *
    * @returns
    */
+  private glyphPluginUpdateEventListener() {
+    this.refresh();
+  }
+
+  /**
+   *
+   * @returns
+   */
+  private refresh() {
+    return this.updateDimensions().updateTextures();
+  }
+
+  /**
+   *
+   * @returns
+   */
   private removeGlyphPluginEventListeners() {
     if (this.currentGlyphPlugin) {
       this.currentGlyphPlugin
-        .off(GlyphPluginEvent.Update, this.updateDimensions, this)
+        .off(GlyphPluginEvent.Update, this.glyphPluginUpdateEventListener, this)
         .off(GlyphPluginEvent.Destroy, this.glyphPluginDestroyEventListener, this, true);
     }
 
@@ -715,5 +739,32 @@ export class Glyphmap extends CustomGameObject(
     this.currentCellHeight = height;
 
     return this.setSize(this.widthInCells * this.currentCellWidth, this.heightInCells * this.currentCellHeight);
+  }
+
+  /**
+   *
+   * @returns
+   */
+  private updateTextures() {
+    const font = this.currentFont;
+    const forceSquareRatio = this.currentForceSquareRatio;
+    const textures = this.textures;
+
+    const getTextureFromBuffer = this.glyphPlugin['getTextureFromBuffer'].bind(
+      this.glyphPlugin
+    ) as typeof this.glyphPlugin['getTextureFromBuffer'];
+
+    for (const [key, buffer] of this.glyphs) {
+      const cellTextures: Phaser.Textures.Texture[] = [];
+      const bufferLen = buffer.length;
+
+      for (let ix = 0; ix < bufferLen; ix += bytesPerGlyph) {
+        cellTextures.push(getTextureFromBuffer(buffer.subarray(ix, ix + bytesPerGlyph), font, forceSquareRatio));
+      }
+
+      textures.set(key, cellTextures);
+    }
+
+    return this;
   }
 }

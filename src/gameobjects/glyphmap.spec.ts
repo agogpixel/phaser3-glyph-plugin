@@ -113,6 +113,26 @@ describe('Glyphmap', () => {
     expect(actual).toHaveBeenCalledTimes(expected);
   });
 
+  it('updates textures when font set', () => {
+    const input = new Font(10, 'Arial, sans-serif');
+
+    const actual = (() => {
+      const glyphmap = new Glyphmap(scene);
+      glyphmap.set(0, 0, [['Q', '#aaa']]).set(1, 1, [
+        ['R', '#aaa'],
+        ['T', '#aaa']
+      ]);
+      const spy = jest.spyOn(glyphmap['textures'], 'set');
+      glyphmap.font = input;
+      glyphmap.destroy();
+      return spy;
+    })();
+
+    const expected = 2;
+
+    expect(actual).toHaveBeenCalledTimes(expected);
+  });
+
   it('gets force square ratio', () => {
     const input = new Glyphmap(scene);
     const actual = input.forceSquareRatio;
@@ -150,6 +170,26 @@ describe('Glyphmap', () => {
     })();
 
     const expected = 1;
+
+    expect(actual).toHaveBeenCalledTimes(expected);
+  });
+
+  it('updates textures when force square ratio set', () => {
+    const input = true;
+
+    const actual = (() => {
+      const glyphmap = new Glyphmap(scene);
+      glyphmap.set(0, 0, [['Q', '#aaa']]).set(1, 1, [
+        ['R', '#aaa'],
+        ['T', '#aaa']
+      ]);
+      const spy = jest.spyOn(glyphmap['textures'], 'set');
+      glyphmap.forceSquareRatio = input;
+      glyphmap.destroy();
+      return spy;
+    })();
+
+    const expected = 2;
 
     expect(actual).toHaveBeenCalledTimes(expected);
   });
@@ -192,6 +232,27 @@ describe('Glyphmap', () => {
     })();
 
     const expected = 1;
+
+    expect(actual).toHaveBeenCalledTimes(expected);
+    input.destroy();
+  });
+
+  it('updates textures when glyph plugin set', () => {
+    const input = new GlyphPlugin(game.plugins);
+
+    const actual = (() => {
+      const glyphmap = new Glyphmap(scene);
+      glyphmap.set(0, 0, [['Q', '#aaa']]).set(1, 1, [
+        ['R', '#aaa'],
+        ['T', '#aaa']
+      ]);
+      const spy = jest.spyOn(glyphmap['textures'], 'set');
+      glyphmap.glyphPlugin = input;
+      glyphmap.destroy();
+      return spy;
+    })();
+
+    const expected = 2;
 
     expect(actual).toHaveBeenCalledTimes(expected);
     input.destroy();
@@ -343,6 +404,24 @@ describe('Glyphmap', () => {
     })();
 
     const expected = 1;
+
+    expect(actual).toHaveBeenCalledTimes(expected);
+  });
+
+  it('refreshes when current glyph plugin emits an update event', () => {
+    const input = ['M', true, new GlyphPlugin(scene.plugins)] as const;
+
+    const actual = (() => {
+      const glyphmap = new Glyphmap(scene);
+      const spy = jest.spyOn(glyphmap, 'refresh' as never);
+      glyphmap.glyphPlugin.measurementCh = input[0];
+      glyphmap.glyphPlugin.advancedTextMetrics = input[1];
+      glyphmap.glyphPlugin = input[2];
+      glyphmap.destroy();
+      return spy;
+    })();
+
+    const expected = 3;
 
     expect(actual).toHaveBeenCalledTimes(expected);
   });
