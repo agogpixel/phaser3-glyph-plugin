@@ -82,7 +82,7 @@ npm start
 Live development with demos:
 
 ```shell
-npm run start:demos
+npm run start-demos
 ```
 
 Lint files:
