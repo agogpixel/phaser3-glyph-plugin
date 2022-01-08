@@ -1,3 +1,16 @@
+/**
+ * Glyphmap game object module.
+ *
+ * Derived from {@link https://github.com/photonstorm/phaser/tree/master/src/tilemaps}.
+ * @copyright 2020 Photon Storm Ltd.
+ * @license {@link https://opensource.org/licenses/MIT|MIT License}
+ *
+ * @author kidthales <kidthales@agogpixel.com>
+ * @copyright 2021-present AgogPixel
+ * @license {@link https://agogpixel.github.io/phaser3-glyph-plugin/LICENSE|MIT License}
+ * @module
+ */
+
 declare const WEBGL_RENDERER: unknown;
 declare const CANVAS_RENDERER: unknown;
 
@@ -22,7 +35,6 @@ import { bytesPerGlyph, createGlyphsBuffer, Font } from '../shared';
 
 /**
  * Glyphmap factory type.
- * @internal
  */
 export type GlyphmapFactory = (
   ...args: ConstructorParameters<typeof Glyphmap> extends [unknown, ...infer R] ? R : never
@@ -30,7 +42,6 @@ export type GlyphmapFactory = (
 
 /**
  * Glyphmap creator type.
- * @internal
  */
 export type GlyphmapCreator = (config?: GlyphmapConfig, addToScene?: boolean) => Glyphmap;
 
@@ -39,12 +50,12 @@ export type GlyphmapCreator = (config?: GlyphmapConfig, addToScene?: boolean) =>
  */
 export interface GlyphmapConfig extends Phaser.Types.GameObjects.GameObjectConfig {
   /**
-   * Width in cells.
+   * Width in glyph cells.
    */
   width?: number;
 
   /**
-   * Height in cells.
+   * Height in glyph cells.
    */
   height?: number;
 
@@ -373,7 +384,7 @@ if (typeof CANVAS_RENDERER) {
 }
 
 /**
- *
+ * Displays glyph data as a grid.
  */
 export class Glyphmap extends CustomGameObject(
   Alpha,
@@ -389,139 +400,162 @@ export class Glyphmap extends CustomGameObject(
   Visible
 ) {
   /**
-   *
-   * @param x
-   * @param y
-   * @returns
+   * Get position key from coordinates.
+   * @param x X-coordinate.
+   * @param y Y-coordinate.
+   * @returns String of the form `X,Y`.
    */
   private static getKey(x: number, y: number) {
     return `${x},${y}`;
   }
 
   /**
-   *
+   * Height of map in glyph cells.
    */
   readonly heightInCells: number;
 
   /**
-   *
+   * Width of map in glyph cells.
    */
   readonly widthInCells: number;
 
   /**
-   *
+   * The amount of extra glyph cells to add into the cull bounds when
+   * calculating its horizontal size.
+   * @see {@link Glyphmap.setCullPadding}
    */
   cullPaddingX = 1;
 
   /**
-   *
+   * The amount of extra glyph cells to add into the cull bounds when
+   * calculating its vertical size.
+   * @see {@link Glyphmap.setCullPadding}
    */
   cullPaddingY = 1;
 
   /**
-   *
+   * Control if a camera should cull glyph cells before rendering them or not.
+   * @see {@link Glyphmap.setSkipCull}
    */
   skipCull = false;
 
   /**
-   *
+   * Canvas renderer.
    */
   protected readonly renderCanvas = renderCanvas;
 
   /**
-   *
+   * WebGL renderer.
    */
   protected readonly renderWebGL = renderWebGL;
 
   /**
-   *
+   * Glyph data, mapping position key to glyphs buffer.
    */
   private readonly glyphs = new Map<string, Uint8Array>();
 
   /**
-   *
+   * Glyph texture data, mapping position key to glyph textures.
    */
   private readonly textures = new Map<string, Phaser.Textures.Texture[]>();
 
   /**
-   *
+   * Track current glyph cell height, in pixels.
    */
   private currentCellHeight: number;
 
   /**
-   *
+   * Track current glyph cell width, in pixels.
    */
   private currentCellWidth: number;
 
   /**
-   *
+   * Track current font.
    */
   private currentFont: Font;
 
   /**
-   *
+   * Track current glyph plugin.
    */
   private currentGlyphPlugin: GlyphPlugin;
 
   /**
-   *
+   * Track current force square ratio flag.
    */
   private currentForceSquareRatio: boolean;
 
   /**
-   *
+   * Get glyph cell width, in pixels.
    */
   get cellWidth() {
     return this.currentCellWidth;
   }
 
   /**
-   *
+   * Get glyph cell height, in pixels.
    */
   get cellHeight() {
     return this.currentCellHeight;
   }
 
   /**
-   *
+   * Get readonly reference to font.
    */
   get font(): Readonly<Font> {
     return this.currentFont;
   }
+
+  /**
+   * Set font.
+   * @see {@link Glyphmap.setFont}
+   */
   set font(value: Font) {
     this.setFont(value);
   }
 
   /**
-   *
+   * Get force square ratio.
    */
   get forceSquareRatio() {
     return this.currentForceSquareRatio;
   }
+
+  /**
+   * Set force square ratio.
+   * @see {@link Glyphmap.setForceSquareRatio}
+   */
   set forceSquareRatio(value: boolean) {
     this.setForceSquareRatio(value);
   }
 
   /**
-   *
+   * Get glyph plugin.
    */
   get glyphPlugin() {
     return this.currentGlyphPlugin;
   }
+
+  /**
+   * Get glyph plugin.
+   * @see {@link Glyphmap.setGlyphPlugin}
+   */
   set glyphPlugin(value: GlyphPlugin) {
     this.setGlyphPlugin(value);
   }
 
   /**
+   * Instantiate glyphmap game object.
    *
-   * @param scene
-   * @param x
-   * @param y
-   * @param width
-   * @param height
-   * @param font
-   * @param forceSquareRatio
-   * @param pluginKey
+   * @param scene The Scene to which this Game Object belongs.
+   * @param x (Default: 0) World X-coordinate.
+   * @param y (Default: 0) World Y-coordinate.
+   * @param width (Default: 80) Width in glyph cells.
+   * @param height (Default: 25) Height in glyph cells.
+   * @param font (Optional) Font to use.
+   * @param forceSquareRatio (Default: false) Force square glyph frames/cells,
+   * using the greater of width or height of the associated glyph plugin's
+   * measurement character.
+   * @param pluginKey (Optional) Glyph plugin key.
    */
   constructor(
     scene: Phaser.Scene,
@@ -547,11 +581,12 @@ export class Glyphmap extends CustomGameObject(
   }
 
   /**
-   *
-   * @param cellX
-   * @param originX
-   * @param camera
-   * @returns
+   * Converts from glyph cell X-coordinate to world X-coordinate (pixels),
+   * factoring in the glyphmap's position, scale and scroll.
+   * @param cellX Glyph cell X-coordinate.
+   * @param originX (Default: 0) Glyph cell horizontal origin [0..1].
+   * @param camera (Optional) Camera to use.
+   * @returns World X-coordinate corresponding to specified cell X-coordinate.
    */
   cellToWorldX(cellX: number, originX = 0, camera?: Phaser.Cameras.Scene2D.Camera) {
     const cellWidth = this.currentCellWidth * this.scaleX;
@@ -566,11 +601,12 @@ export class Glyphmap extends CustomGameObject(
   }
 
   /**
-   *
-   * @param cellY
-   * @param originY
-   * @param camera
-   * @returns
+   * Converts from glyph cell Y-coordinate to world Y-coordinate (pixels),
+   * factoring in the glyphmap's position, scale and scroll.
+   * @param cellY Glyph cell Y-coordinate.
+   * @param originY (Default: 0) Glyph cell vertical origin [0..1].
+   * @param camera (Optional) Camera to use.
+   * @returns World Y-coordinate corresponding to specified cell Y-coordinate.
    */
   cellToWorldY(cellY: number, originY = 0, camera?: Phaser.Cameras.Scene2D.Camera) {
     const cellHeight = this.currentCellHeight * this.scaleY;
@@ -585,31 +621,34 @@ export class Glyphmap extends CustomGameObject(
   }
 
   /**
-   *
-   * @param cellX
-   * @param cellY
-   * @param originX
-   * @param originY
-   * @param camera
-   * @returns
+   * Converts from glyph cell X,Y coordinates to world X,Y coordinates (pixels),
+   * factoring in the glyphmap's position, scale and scroll.
+   * @param cellX Glyph cell X-coordinate.
+   * @param cellY Glyph cell Y-coordinate.
+   * @param originX (Default: 0) Glyph cell horizontal origin [0..1].
+   * @param originY (Default: 0) Glyph cell vertical origin [0..1].
+   * @param camera (Optional) Camera to use.
+   * @returns World X,Y coordinates tuple corresponding to specified cell X,Y
+   * coordinates.
    */
-  cellToWorldXY(cellX: number, cellY: number, originX = 0.5, originY = 0.5, camera?: Phaser.Cameras.Scene2D.Camera) {
+  cellToWorldXY(cellX: number, cellY: number, originX = 0, originY = 0, camera?: Phaser.Cameras.Scene2D.Camera) {
     return [this.cellToWorldX(cellX, originX, camera), this.cellToWorldY(cellY, originY, camera)] as [number, number];
   }
 
   /**
-   *
-   * @param x
-   * @param y
-   * @returns
+   * Check that specified glyph cell coordinates are within the glyphmap's
+   * bounds.
+   * @param x Glyph cell X-coordinate.
+   * @param y Glyph cell Y-coordinate.
+   * @returns True if in bounds, false otherwise.
    */
   checkBounds(x: number, y: number) {
     return x >= 0 && x < this.widthInCells && y >= 0 && y < this.heightInCells;
   }
 
   /**
-   *
-   * @returns
+   * Clear all glyph data & textures from the glyphmap.
+   * @returns Glyphmap instance for further chaining.
    */
   clear() {
     this.glyphs.clear();
@@ -619,10 +658,10 @@ export class Glyphmap extends CustomGameObject(
   }
 
   /**
-   *
+   * Erase glyphs at specified cell position.
    * @param x
    * @param y
-   * @returns
+   * @returns Glyphmap instance for further chaining.
    */
   erase(x: number, y: number) {
     const key = Glyphmap.getKey(x, y);
@@ -634,8 +673,9 @@ export class Glyphmap extends CustomGameObject(
   }
 
   /**
-   * {@inheritdoc}
-   * @param fromScene `True` if this Game Object is being destroyed by the Scene, `false` if not. Default false.
+   * Destroy glyphmap & resources.
+   * @param fromScene (Default: false) Is Game Object is being destroyed by the
+   * Scene?
    */
   destroy(fromScene?: boolean) {
     super.destroy(fromScene);
@@ -643,11 +683,13 @@ export class Glyphmap extends CustomGameObject(
   }
 
   /**
-   *
-   * @param x
-   * @param y
-   * @param glyphs
-   * @returns
+   * Draw glyphs at specified cell position. Overwrites any previous glyphs
+   * drawn to the same position.
+   * @param x Glyph cell X-coordinate.
+   * @param y Glyph cell Y-coordinate.
+   * @param glyphs Glyphlikes to draw. An empty array is equivalent to erasing
+   * the cell.
+   * @returns Glyphmap instance for further chaining.
    */
   draw(x: number, y: number, glyphs: GlyphLike[]) {
     if (!this.checkBounds(x, y)) {
@@ -675,10 +717,18 @@ export class Glyphmap extends CustomGameObject(
   }
 
   /**
-   *
-   * @param paddingX
-   * @param paddingY
-   * @returns
+   * When a Camera culls the cells in a Glyphmap it does so using its view into
+   * the world, building up a rectangle inside which the cells must exist or
+   * they will be culled. Sometimes you may need to expand the size of this
+   * 'cull rectangle', especially if you plan on rotating the Camera viewing the
+   * Glyphmap. Do so by providing the padding values. The values given are in
+   * cells, not pixels. So if the cell width was 16px and you set `paddingX` to
+   * be 4, it would add 16px x 4 to the cull rectangle (adjusted for scale).
+   * @param paddingX (Default: 1) The amount of extra horizontal cells to add to
+   * the cull check padding.
+   * @param paddingY (Default: 1) The amount of extra vertical cells to add to
+   * the cull check padding.
+   * @returns Glyphmap instance for further chaining.
    */
   setCullPadding(paddingX = 1, paddingY = 1) {
     this.cullPaddingX = paddingX;
@@ -687,9 +737,9 @@ export class Glyphmap extends CustomGameObject(
   }
 
   /**
-   *
-   * @param font
-   * @returns
+   * Set font. Refreshes glyphmap.
+   * @param font Font.
+   * @returns Glyphmap instance for further chaining.
    */
   setFont(font: Font) {
     this.currentFont = Font.clone(font);
@@ -697,9 +747,9 @@ export class Glyphmap extends CustomGameObject(
   }
 
   /**
-   *
-   * @param value
-   * @returns
+   * Set force square ratio. Refreshes glyphmap.
+   * @param value (Default: true) Force square ratio flag.
+   * @returns Glyphmap instance for further chaining.
    */
   setForceSquareRatio(value = true) {
     this.currentForceSquareRatio = value;
@@ -707,9 +757,9 @@ export class Glyphmap extends CustomGameObject(
   }
 
   /**
-   *
-   * @param plugin
-   * @returns
+   * Set associated glyph plugin & update event listeners. Refreshes glyphmap.
+   * @param plugin Glyph plugin instance.
+   * @returns Glyphmap instance for further chaining.
    */
   setGlyphPlugin(plugin: GlyphPlugin) {
     this.removeGlyphPluginEventListeners();
@@ -718,9 +768,9 @@ export class Glyphmap extends CustomGameObject(
   }
 
   /**
-   *
-   * @param value
-   * @returns
+   * Control if the Cameras should cull cells before rendering.
+   * @param value (Default: true) Skip cull flag.
+   * @returns Glyphmap instance for further chaining.
    */
   setSkipCull(value = true) {
     this.skipCull = value;
@@ -728,11 +778,12 @@ export class Glyphmap extends CustomGameObject(
   }
 
   /**
-   *
-   * @param worldX
-   * @param snapToFloor
-   * @param camera
-   * @returns
+   * Converts from world X-coordinate (pixels) to glyph cell X-coordinate,
+   * factoring in the glyphmap's position, scale and scroll.
+   * @param worldX World X-coordinate, in pixels.
+   * @param snapToFloor (Default: true) Round result down to nearest integer.
+   * @param camera (Optional) Camera to use.
+   * @returns Cell X-coordinate corresponding to specified world X-coordinate.
    */
   worldToCellX(worldX: number, snapToFloor = true, camera?: Phaser.Cameras.Scene2D.Camera) {
     const cellWidth = this.currentCellWidth * this.scaleX;
@@ -749,11 +800,12 @@ export class Glyphmap extends CustomGameObject(
   }
 
   /**
-   *
-   * @param worldY
-   * @param snapToFloor
-   * @param camera
-   * @returns
+   * Converts from world Y-coordinate (pixels) to glyph cell Y-coordinate,
+   * factoring in the glyphmap's position, scale and scroll.
+   * @param worldY World Y-coordinate, in pixels.
+   * @param snapToFloor (Default: true) Round result down to nearest integer.
+   * @param camera (Optional) Camera to use.
+   * @returns Cell Y-coordinate corresponding to specified world Y-coordinate.
    */
   worldToCellY(worldY: number, snapToFloor = true, camera?: Phaser.Cameras.Scene2D.Camera) {
     const cellHeight = this.currentCellHeight * this.scaleY;
@@ -769,6 +821,16 @@ export class Glyphmap extends CustomGameObject(
     return snapToFloor ? Math.floor(cellY) : cellY;
   }
 
+  /**
+   * Converts from world X,Y coordinates (pixels) to glyph cell X,Y coordinates,
+   * factoring in the glyphmap's position, scale and scroll.
+   * @param worldX World X-coordinate, in pixels.
+   * @param worldY World Y-coordinate, in pixels.
+   * @param snapToFloor (Default: true) Round result down to nearest integer.
+   * @param camera (Optional) Camera to use.
+   * @returns Cell X,Y coordinates tuple corresponding to specified world X,Y
+   * coordinates.
+   */
   worldToCellXY(worldX: number, worldY: number, snapToFloor = true, camera?: Phaser.Cameras.Scene2D.Camera) {
     return [this.worldToCellX(worldX, snapToFloor, camera), this.worldToCellY(worldY, snapToFloor, camera)] as [
       number,
@@ -777,8 +839,8 @@ export class Glyphmap extends CustomGameObject(
   }
 
   /**
-   *
-   * @returns
+   * Add glyph plugin event listeners.
+   * @returns Glyphmap instance for further chaining.
    */
   private addGlyphPluginEventListeners() {
     if (this.currentGlyphPlugin) {
@@ -791,8 +853,10 @@ export class Glyphmap extends CustomGameObject(
   }
 
   /**
-   *
-   * @returns
+   * When associated glyph plugin is destroyed, glyphmap will attempt to
+   * fallback to first glyph plugin found in the plugins manager, refreshing &
+   * registering new event listeners.
+   * @throws Error if no glyph plugin is found in the plugin manager.
    */
   private glyphPluginDestroyEventListener() {
     if (!this.scene) {
@@ -800,28 +864,27 @@ export class Glyphmap extends CustomGameObject(
     }
 
     this.currentGlyphPlugin = GlyphPlugin.findPlugin(this.scene.plugins);
-    this.addGlyphPluginEventListeners();
+    this.refresh().addGlyphPluginEventListeners();
   }
 
   /**
-   *
-   * @returns
+   * When associated glyph plugin emits update event, refresh the glyphmap.
    */
   private glyphPluginUpdateEventListener() {
     this.refresh();
   }
 
   /**
-   *
-   * @returns
+   * Refresh glyphmap dimensions & textures.
+   * @returns Glyphmap instance for further chaining.
    */
   private refresh() {
     return this.updateDimensions().updateTextures();
   }
 
   /**
-   *
-   * @returns
+   * Remove glyph plugin event listeners.
+   * @returns Glyphmap instance for further chaining.
    */
   private removeGlyphPluginEventListeners() {
     if (this.currentGlyphPlugin) {
@@ -834,8 +897,8 @@ export class Glyphmap extends CustomGameObject(
   }
 
   /**
-   *
-   * @returns
+   * Update glyphmap dimensions.
+   * @returns Glyphmap instance for further chaining.
    */
   private updateDimensions() {
     const [width, height] = this.currentGlyphPlugin.getFrameDimensions(
@@ -851,8 +914,8 @@ export class Glyphmap extends CustomGameObject(
   }
 
   /**
-   *
-   * @returns
+   * Update glyphmap textures.
+   * @returns Glyphmap instance for further chaining.
    */
   private updateTextures() {
     const font = this.currentFont;

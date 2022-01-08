@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 
 -   Glyphmap provides cellToWorld & worldToCell coordinate translation methods.
+-   Glyphmap UI demo.
+-   Additional typedoc documentation.
 
 ### Changed
 

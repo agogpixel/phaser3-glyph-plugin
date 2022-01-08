@@ -18,7 +18,7 @@
     "build-webgl-bundle": "cross-env NODE_ENV=production CANVAS_RENDERER=false webpack --progress --color",
     "build-demos": "cross-env NODE_ENV=production DEMOS=true webpack --progress --color && shx cp LICENSE dist/demos",
     "build-js": "tsc --project tsconfig.build.json",
-    "build-docs": "typedoc --tsconfig tsconfig.build.json --out dist/docs --entryPointStrategy expand src && shx cp LICENSE dist/docs",
+    "build-docs": "typedoc --tsconfig tsconfig.build.json --out dist/docs --entryPointStrategy expand src --excludeInternal && shx cp LICENSE dist/docs",
     "smoke-test": "cd test/smoke && npm install && npm test",
     "create-tarball": "cavy pack dist",
     "publish-tarball": "cavy publish dist",

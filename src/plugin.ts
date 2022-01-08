@@ -1,3 +1,12 @@
+/**
+ * Glyph plugin module.
+ *
+ * @author kidthales <kidthales@agogpixel.com>
+ * @copyright 2021-present AgogPixel
+ * @license {@link https://agogpixel.github.io/phaser3-glyph-plugin/LICENSE|MIT License}
+ * @module
+ */
+
 import { createPluginApiMixin } from '@agogpixel/phaser3-ts-utils/mixins/scene/create-plugin-api-mixin';
 
 import { GlyphmapCreator, glyphmapCreator, GlyphmapFactory, glyphmapFactory } from './gameobjects/glyphmap';
@@ -368,23 +377,33 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   private currentAdvancedTextMetrics = false;
 
   /**
-   * Measurement character.
-   * @emits {@link GlyphPluginEvent.Update} when set.
+   * Get measurement character.
    */
   get measurementCh() {
     return this.currentMeasurementCh;
   }
+
+  /**
+   * Set measurement character.
+   * @emits {@link GlyphPluginEvent.Update} when set.
+   * @see {@link GlyphPlugin.setMeasurementCh}
+   */
   set measurementCh(value: string) {
     this.setMeasurementCh(value);
   }
 
   /**
-   * Advanced text metrics.
-   * @emits {@link GlyphPluginEvent.Update} when set.
+   * Get advanced text metrics.
    */
   get advancedTextMetrics() {
     return this.currentAdvancedTextMetrics;
   }
+
+  /**
+   * Set advanced text metrics.
+   * @emits {@link GlyphPluginEvent.Update} when set.
+   * @see {@link GlyphPlugin.setAdvancedTextMetrics}
+   */
   set advancedTextMetrics(value: boolean) {
     this.setAdvancedTextMetrics(value);
   }
@@ -400,7 +419,7 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   * Destroy glyphmap & resources.
+   * Destroy glyph plugin & resources.
    * @emits {@link GlyphPluginEvent.Destroy} when invoked.
    */
   destroy() {

@@ -1,3 +1,12 @@
+/**
+ * Shared module.
+ *
+ * @author kidthales <kidthales@agogpixel.com>
+ * @copyright 2021-present AgogPixel
+ * @license {@link https://agogpixel.github.io/phaser3-glyph-plugin/LICENSE|MIT License}
+ * @module
+ */
+
 import colorString from 'color-string';
 
 /**
@@ -17,7 +26,6 @@ export type ColorLike =
 
 /**
  * Union of CSS font family values.
- * @internal
  */
 export type FontFamily =
   | 'sans-serif'
@@ -64,19 +72,16 @@ export type FontFamily =
 
 /**
  * Union of CSS font style values.
- * @internal
  */
 export type FontStyle = 'normal' | 'italic' | 'oblique';
 
 /**
  * Union of CSS font variant values.
- * @internal
  */
 export type FontVariant = 'normal' | 'small-caps';
 
 /**
  * Union of CSS font weight values.
- * @internal
  */
 export type FontWeight =
   | 'normal'
