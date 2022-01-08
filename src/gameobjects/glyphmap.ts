@@ -544,7 +544,7 @@ export class Glyphmap extends CustomGameObject(
    * @param camera
    * @returns
    */
-  cellToWorldX(cellX: number, originX = 0.5, camera?: Phaser.Cameras.Scene2D.Camera) {
+  cellToWorldX(cellX: number, originX = 0, camera?: Phaser.Cameras.Scene2D.Camera) {
     const cellWidth = this.currentCellWidth * this.scaleX;
 
     camera = camera || this.scene.cameras.main;
@@ -563,7 +563,7 @@ export class Glyphmap extends CustomGameObject(
    * @param camera
    * @returns
    */
-  cellToWorldY(cellY: number, originY = 0.5, camera?: Phaser.Cameras.Scene2D.Camera) {
+  cellToWorldY(cellY: number, originY = 0, camera?: Phaser.Cameras.Scene2D.Camera) {
     const cellHeight = this.currentCellHeight * this.scaleY;
 
     camera = camera || this.scene.cameras.main;

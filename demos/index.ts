@@ -8,9 +8,15 @@ type DemoArgs = [Renderer, string, boolean];
 const demos = [
   [
     'glyphmap-1',
-    "Display a square 'room' using Glyphmap",
+    "Display a square 'room' with Glyphmap",
     async (...args: DemoArgs) =>
       (await import(/* webpackChunkName: "demo-glyphmap-1" */ './glyphmap-1')).default(...args)
+  ],
+  [
+    'glyphmap-2',
+    'Input handling with Glyphmap',
+    async (...args: DemoArgs) =>
+      (await import(/* webpackChunkName: "demo-glyphmap-2" */ './glyphmap-2')).default(...args)
   ]
 ] as const;
 
@@ -36,12 +42,14 @@ async function run() {
 }
 
 function indexHandler(notFound?: string) {
+  const filteredRenderers = renderers.filter((r) => r !== 'auto');
+
   let html = (notFound ? `<small>Not Found: ${notFound}</small>` : '') + '<h1>Demos</h1><ul>';
 
   for (const demo of demos) {
     html += '<li><bold>' + demo[1] + '</bold><ul>';
 
-    for (const renderer of renderers) {
+    for (const renderer of filteredRenderers) {
       html +=
         '<li><a href="?demo=' +
         demo[0] +
