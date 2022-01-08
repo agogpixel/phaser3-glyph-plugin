@@ -21,52 +21,55 @@ import type { GlyphLike } from '../shared';
 import { bytesPerGlyph, createGlyphsBuffer, Font } from '../shared';
 
 /**
- *
+ * Glyphmap factory type.
+ * @internal
  */
 export type GlyphmapFactory = (
   ...args: ConstructorParameters<typeof Glyphmap> extends [unknown, ...infer R] ? R : never
 ) => Glyphmap;
 
 /**
- *
+ * Glyphmap creator type.
+ * @internal
  */
 export type GlyphmapCreator = (config?: GlyphmapConfig, addToScene?: boolean) => Glyphmap;
 
 /**
- *
+ * Glyphmap creator configuration.
  */
 export interface GlyphmapConfig extends Phaser.Types.GameObjects.GameObjectConfig {
   /**
-   *
+   * Width in cells.
    */
   width?: number;
 
   /**
-   *
+   * Height in cells.
    */
   height?: number;
 
   /**
-   *
+   * Font.
    */
   font?: Font;
 
   /**
-   *
+   * Force square ratio?
    */
   forceSquareRatio?: boolean;
 
   /**
-   *
+   * Glyph plugin key.
    */
   pluginKey?: string;
 }
 
 /**
- *
- * @param this
- * @param args
- * @returns
+ * Glyphmap factory.
+ * @param this Phaser GameObject factory.
+ * @param args Glyphmap instantiation arguments.
+ * @returns Glyphmap instance.
+ * @internal
  */
 export const glyphmapFactory: GlyphmapFactory = function glyphmapFactory(
   this: Phaser.GameObjects.GameObjectFactory,
@@ -76,11 +79,13 @@ export const glyphmapFactory: GlyphmapFactory = function glyphmapFactory(
 };
 
 /**
- *
- * @param this
- * @param config
- * @param addToScene
- * @returns
+ * Glyphmap creator.
+ * @param this Phaser GameObject creator.
+ * @param config Glyphmap creator configuration.
+ * @param addToScene Add this Game Object to the Scene after creating it? If set
+ * this argument overrides the `add` property in the config object.
+ * @returns Glyphmap instance.
+ * @internal
  */
 export const glyphmapCreator: GlyphmapCreator = function glyphmapCreator(
   this: Phaser.GameObjects.GameObjectCreator,
@@ -108,15 +113,17 @@ export const glyphmapCreator: GlyphmapCreator = function glyphmapCreator(
 };
 
 /**
- *
+ * Used for cull bounds pass.
+ * @internal
  */
 const bounds = new Phaser.Geom.Rectangle();
 
 /**
- *
- * @param map
- * @param camera
- * @returns
+ * Get cull bounds to potentially reduce number of cells that require rendering.
+ * @param map Glyphmap instance.
+ * @param camera Camera instance.
+ * @returns Rectangular bounds of glyphmap that should be rendered.
+ * @internal
  */
 function getCullBounds(map: Glyphmap, camera: Phaser.Cameras.Scene2D.Camera) {
   if (map.skipCull || map.scrollFactorX !== 1 || map.scrollFactorY !== 1) {
@@ -136,7 +143,8 @@ function getCullBounds(map: Glyphmap, camera: Phaser.Cameras.Scene2D.Camera) {
 }
 
 /**
- *
+ * Glyphmap WebGL renderer.
+ * @internal
  */
 let renderWebGL: (
   renderer: Phaser.Renderer.WebGL.WebGLRenderer,
@@ -145,7 +153,8 @@ let renderWebGL: (
 ) => void = Phaser.Utils.NOOP;
 
 /**
- *
+ * Glyphmap canvas renderer.
+ * @internal
  */
 let renderCanvas: (
   renderer: Phaser.Renderer.Canvas.CanvasRenderer,

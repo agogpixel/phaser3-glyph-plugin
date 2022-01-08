@@ -12,41 +12,42 @@ import {
 } from './shared';
 
 /**
- *
+ * Glyph plugin initialization data.
  */
 export interface GlyphPluginInitData {
   /**
-   *
+   * **Experimental**: Use browser's advanced text metrics API.
    */
   advancedTextMetrics?: boolean;
 
   /**
-   *
+   * Character used for determining default texture frame dimensions.
    */
   measurementCh?: CharLike;
 }
 
 /**
- *
+ * Glyph plugin event.
  */
 export enum GlyphPluginEvent {
   /**
-   *
+   * Emitted when `measurementCh` or `advancedTextMetrics` plugin properties
+   * are set.
    */
   Update = 'update',
 
   /**
-   *
+   * Emitted when plugin is destroyed.
    */
   Destroy = 'destroy'
 }
 
 /**
- *
+ * Glyph plugin. Provides on the fly glyph texture generation.
  */
 export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   /**
-   *
+   * Mixin GlyphPlugin API with specified scene type.
    */
   static readonly GlyphScene = createPluginApiMixin<
     GlyphPlugin,
@@ -54,21 +55,26 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
     {
       /**
        * Glyphmap factory.
-       * @param x
-       * @param y
-       * @param width
-       * @param height
-       * @param fontArgs
-       * @param pluginKey
-       * @returns Glyphmap GameObject instance that has been added to the scene's display list.
+       * @param x (Default: 0) X-coordinate in world space.
+       * @param y (Default: 0) Y-coordinate in world space.
+       * @param width (Default: 80) Width in cells.
+       * @param height (Default: 25) Height in cells.
+       * @param font (Optional) Font to use.
+       * @param pluginKey (Optional) Specify a specific glyph plugin instance
+       * (in the plugin manager) to use for textures.
+       * @returns Glyphmap GameObject instance that has been added to the
+       * scene's display list.
        */
       glyphmap: GlyphmapFactory;
     },
     {
       /**
        * Glyphmap creator.
-       * @param config The configuration object this Game Object will use to create itself.
-       * @param addToScene Add this Game Object to the Scene after creating it? If set this argument overrides the `add` property in the config object.
+       * @param config The configuration object this Game Object will use to
+       * create itself.
+       * @param addToScene (Default: true) Add this Game Object to the Scene
+       * after creating it? If set this argument overrides the `add` property in
+       * the config object.
        * @returns Glyphmap GameObject instance.
        */
       glyphmap: GlyphmapCreator;
@@ -76,19 +82,22 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   >();
 
   /**
-   *
+   * Frame dimensions cache.
    */
   private static readonly frameDimensionsCache: Record<string, [number, number]> = {};
 
   /**
-   *
+   * Text metrics cache.
    */
   private static readonly textMetricsCache: Record<string, TextMetrics> = {};
 
   /**
-   *
-   * @param pluginManager
-   * @returns
+   * Find glyph plugin in plugin manager.
+   * @param pluginManager Plugin manager instance.
+   * @param key (Optional) Plugin key to search for.
+   * @returns Returns glyph plugin as specified by key, or fallback to first
+   * glyph plugin found.
+   * @throws Error if no glyph plugin instance exists in the plugin manager.
    */
   static findPlugin(pluginManager: Phaser.Plugins.PluginManager, key?: string) {
     let plugin: GlyphPlugin;
@@ -109,11 +118,14 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   *
-   * @param charlike
-   * @param font
-   * @param forceSquareRatio
-   * @returns
+   * Get frame dimensions for specified charlike & font combination.
+   * @param charlike Charlike to use.
+   * @param font Font to use.
+   * @param forceSquareRatio (Default: false) Force square frame, using the
+   * greater of width or height.
+   * @param advancedTextMetrics (Default: false) **Experimental**: Use
+   * browser's advanced text metrics API.
+   * @returns Tuple containing width & height of the frame.
    */
   static getFrameDimensions(
     charlike: CharLike,
@@ -166,14 +178,19 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   *
-   * @param textures
-   * @param glyphs
-   * @param font
-   * @param measurementCh
-   * @param forceSquareRatio
-   * @param advancedTextMetrics
-   * @returns
+   * Generate, cache, & return a texture for specified glyphlikes, font, &
+   * measurement character combination. Defines frame dimensions for each glyph
+   * in the texture, using either the dimensions of the measurement character,
+   * or the glyph's dimensions - whichever is greater.
+   * @param textures Texture manager instance.
+   * @param glyphs Glyphlikes to draw to texture, left to right.
+   * @param font Font to use.
+   * @param measurementCh Measurement character to use.
+   * @param forceSquareRatio (Default: false) Force square frames, using the
+   * greater of width or height for each glyph.
+   * @param advancedTextMetrics (Default: false) **Experimental**: Use
+   * browser's advanced text metrics API.
+   * @returns Texture representation of specified glyphlikes.
    */
   static getTexture(
     textures: Phaser.Textures.TextureManager,
@@ -194,13 +211,15 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   *
-   * @param glyphs
-   * @param font
-   * @param measurementCh
-   * @param forceSquareRatio
-   * @param advancedTextMetrics
-   * @returns
+   * Get texture key for specified glyphlikes, font, & measurement character
+   * combination.
+   * @param glyphs Glyphlikes to use.
+   * @param font Font to use.
+   * @param measurementCh Measurement character.
+   * @param forceSquareRatio (Default: false) Force square frames.
+   * @param advancedTextMetrics (Default: false) **Experimental**.
+   * @returns Key for corresponding texture that would be generated with
+   * specified parameters.
    */
   static getTextureKey(
     glyphs: GlyphLike[],
@@ -219,14 +238,16 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   *
-   * @param textures
-   * @param buffer
-   * @param font
-   * @param measurementCh
-   * @param forceSquareRatio
-   * @param advancedTextMetrics
-   * @returns
+   * Get texture from internal glyph buffer representation.
+   * @param textures Texture manager.
+   * @param buffer Buffer to read from.
+   * @param font Font to use.
+   * @param measurementCh Measurement character to use.
+   * @param forceSquareRatio (Optional) Force square frames, using the
+   * greater of width or height for each glyph.
+   * @param advancedTextMetrics (Optional) **Experimental**: Use
+   * browser's advanced text metrics API.
+   * @returns Texture representation of specified glyph buffer.
    */
   private static getTextureFromBuffer(
     textures: Phaser.Textures.TextureManager,
@@ -309,13 +330,14 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   *
-   * @param buffer
-   * @param font
-   * @param measurementCh
-   * @param forceSquareRatio
-   * @param advancedTextMetrics
-   * @returns
+   * Get texture from internal glyph buffer representation.
+   * @param buffer The buffer to read from.
+   * @param font Font to use.
+   * @param measurementCh Measurement character to use.
+   * @param forceSquareRatio (Optional) Force square frames.
+   * @param advancedTextMetrics (Optional) **Experimental**.
+   * @returns Key for corresponding texture that would be generated with
+   * specified parameters.
    */
   private static getTextureKeyFromBuffer(
     buffer: Uint8Array,
@@ -331,51 +353,45 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   *
+   * Event emitter to send {@link GlyphPluginEvent}s to subscribers.
    */
   private readonly eventEmitter = new Phaser.Events.EventEmitter();
 
   /**
-   *
+   * Tracks current measurement character value.
    */
   private currentMeasurementCh = 'W';
 
   /**
-   *
+   * Tracks current advanced text metrics value.
    */
   private currentAdvancedTextMetrics = false;
 
   /**
-   *
+   * Measurement character.
+   * @emits {@link GlyphPluginEvent.Update} when set.
    */
   get measurementCh() {
     return this.currentMeasurementCh;
   }
-
-  /**
-   *
-   */
   set measurementCh(value: string) {
     this.setMeasurementCh(value);
   }
 
   /**
-   *
+   * Advanced text metrics.
+   * @emits {@link GlyphPluginEvent.Update} when set.
    */
   get advancedTextMetrics() {
     return this.currentAdvancedTextMetrics;
   }
-
-  /**
-   *
-   */
   set advancedTextMetrics(value: boolean) {
     this.setAdvancedTextMetrics(value);
   }
 
   /**
-   *
-   * @param pluginManager
+   * Instantiate glyph plugin.
+   * @param pluginManager A reference to the Plugin Manager.
    */
   constructor(pluginManager: Phaser.Plugins.PluginManager) {
     super(pluginManager);
@@ -384,31 +400,37 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   *
+   * Destroy glyphmap & resources.
+   * @emits {@link GlyphPluginEvent.Destroy} when invoked.
    */
-  destroy(): void {
+  destroy() {
     super.destroy();
     this.eventEmitter.emit(GlyphPluginEvent.Destroy);
     this.eventEmitter.destroy();
   }
 
   /**
-   *
-   * @param charlike
-   * @param font
-   * @param forceSquareRatio
-   * @returns
+   * Get frame dimensions for specified charlike & font combination.
+   * @param charlike Charlike to use.
+   * @param font Font to use.
+   * @param forceSquareRatio (Default: false) Force square frame, using the
+   * greater of width or height.
+   * @returns Tuple containing width & height of the frame.
    */
   getFrameDimensions(charlike: CharLike, font: Font, forceSquareRatio = false): [number, number] {
     return GlyphPlugin.getFrameDimensions(charlike, font, forceSquareRatio, this.currentAdvancedTextMetrics);
   }
 
   /**
-   *
-   * @param glyphs
-   * @param font
-   * @param forceSquareRatio
-   * @returns
+   * Generate, cache, & return a texture for specified glyphlikes & font
+   * combination. Defines frame dimensions for each glyph in the texture, using
+   * either the dimensions of the measurement character, or the glyph's
+   * dimensions - whichever is greater.
+   * @param glyphs Glyphlikes to draw to texture, left to right.
+   * @param font Font to use.
+   * @param forceSquareRatio (Default: false) Force square frames, using the
+   * greater of width or height for each glyph.
+   * @returns Texture representation of specified glyphlikes.
    */
   getTexture(glyphs: GlyphLike[], font: Font, forceSquareRatio = false) {
     return GlyphPlugin.getTexture(
@@ -422,11 +444,12 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   *
-   * @param glyphs
-   * @param font
-   * @param forceSquareRatio
-   * @returns
+   * Get texture key for specified glyphlikes & font combination.
+   * @param glyphs Glyphlikes to use.
+   * @param font Font to use.
+   * @param forceSquareRatio (Default: false) Force square frames.
+   * @returns Key for corresponding texture that would be generated with
+   * specified parameters.
    */
   getTextureKey(glyphs: GlyphLike[], font: Font, forceSquareRatio = false) {
     return GlyphPlugin.getTextureKey(
@@ -439,8 +462,9 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   *
-   * @param data
+   * Called by the plugin manager when glyph plugin is initialized.
+   * @param data Glyph plugin initialization data.
+   * @emits {@link GlyphPluginEvent.Update} when initialization data provided.
    */
   init(data?: GlyphPluginInitData) {
     super.init();
@@ -459,12 +483,12 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   *
-   * @param event
-   * @param fn
-   * @param context
-   * @param once
-   * @returns
+   * Remove the listeners of a given event.
+   * @param event The event name.
+   * @param fn Only remove the listeners that match this function.
+   * @param context Only remove the listeners that have this context.
+   * @param once Only remove one-time listeners.
+   * @returns Glyph plugin instance for further chaining.
    */
   off<F extends (...args: unknown[]) => void, T>(event: GlyphPluginEvent, fn: F, context?: T, once?: boolean) {
     this.eventEmitter.off(event, fn, context, once);
@@ -472,11 +496,11 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   *
-   * @param event
-   * @param fn
-   * @param context
-   * @returns
+   * Add a listener for a given event.
+   * @param event The event name.
+   * @param fn The listener function.
+   * @param context The context to invoke the listener with. Default this.
+   * @returns Glyph plugin instance for further chaining.
    */
   on<F extends (...args: unknown[]) => void, T>(event: GlyphPluginEvent, fn: F, context?: T) {
     this.eventEmitter.on(event, fn, context);
@@ -484,11 +508,11 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   *
-   * @param event
-   * @param fn
-   * @param context
-   * @returns
+   * Add a one-time listener for a given event.
+   * @param event The event name.
+   * @param fn The listener function.
+   * @param context The context to invoke the listener with. Default this.
+   * @returns Glyph plugin instance for further chaining.
    */
   once<F extends (...args: unknown[]) => void, T>(event: GlyphPluginEvent, fn: F, context?: T) {
     this.eventEmitter.once(event, fn, context);
@@ -496,9 +520,10 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   *
-   * @param value
-   * @returns
+   * Set advanced text metrics.
+   * @param value (Default: true) Advanced text metrics flag.
+   * @returns Glyph plugin instance for further chaining.
+   * @emits {@link GlyphPluginEvent.Update} when set.
    */
   setAdvancedTextMetrics(value = true) {
     this.currentAdvancedTextMetrics = value;
@@ -507,9 +532,10 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   *
-   * @param charlike
-   * @returns
+   * Set measurement character.
+   * @param charlike Charlike.
+   * @returns Glyph plugin instance for further chaining.
+   * @emits {@link GlyphPluginEvent.Update} when set.
    */
   setMeasurementCh(charlike: CharLike) {
     const ch = convertCharLikeToString(charlike);
@@ -519,11 +545,12 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   *
-   * @param buffer
-   * @param font
-   * @param forceSquareRatio
-   * @returns
+   * Get texture from internal glyph buffer representation.
+   * @param buffer Buffer to read from.
+   * @param font Font to use.
+   * @param forceSquareRatio (Optional) Force square frames, using the
+   * greater of width or height for each glyph.
+   * @returns Texture representation of specified glyph buffer.
    */
   protected getTextureFromBuffer(buffer: Uint8Array, font: Font, forceSquareRatio?: boolean) {
     return GlyphPlugin.getTextureFromBuffer(
