@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+
+-   Glyphmap provides cellToWorld & worldToCell coordinate translation methods.
+
+### Changed
+
+-   Glyphmap eagerly generates textures & caches for rendering.
+-   Glyphmap set & delete methods are now called draw & erase, respectively.
+
 ## [0.1.0] - 2022-01-03
 
 ### Added

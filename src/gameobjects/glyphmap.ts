@@ -539,6 +539,57 @@ export class Glyphmap extends CustomGameObject(
 
   /**
    *
+   * @param cellX
+   * @param originX
+   * @param camera
+   * @returns
+   */
+  cellToWorldX(cellX: number, originX = 0.5, camera?: Phaser.Cameras.Scene2D.Camera) {
+    const cellWidth = this.currentCellWidth * this.scaleX;
+
+    camera = camera || this.scene.cameras.main;
+
+    // Find the world position relative to top left origin, factoring in the
+    // camera's horizontal scroll.
+    const worldX = this.getTopLeft().x + camera.scrollX * (1 - this.scrollFactorX);
+
+    return worldX + cellX * cellWidth + originX * cellWidth;
+  }
+
+  /**
+   *
+   * @param cellY
+   * @param originY
+   * @param camera
+   * @returns
+   */
+  cellToWorldY(cellY: number, originY = 0.5, camera?: Phaser.Cameras.Scene2D.Camera) {
+    const cellHeight = this.currentCellHeight * this.scaleY;
+
+    camera = camera || this.scene.cameras.main;
+
+    // Find the world position relative to top left origin, factoring in the
+    // camera's vertical scroll.
+    const worldY = this.getTopLeft().y + camera.scrollY * (1 - this.scrollFactorY);
+
+    return worldY + cellY * cellHeight + originY * cellHeight;
+  }
+
+  /**
+   *
+   * @param cellX
+   * @param cellY
+   * @param originX
+   * @param originY
+   * @param camera
+   * @returns
+   */
+  cellToWorldXY(cellX: number, cellY: number, originX = 0.5, originY = 0.5, camera?: Phaser.Cameras.Scene2D.Camera) {
+    return [this.cellToWorldX(cellX, originX, camera), this.cellToWorldY(cellY, originY, camera)] as [number, number];
+  }
+
+  /**
+   *
    * @param x
    * @param y
    * @returns
@@ -564,7 +615,7 @@ export class Glyphmap extends CustomGameObject(
    * @param y
    * @returns
    */
-  delete(x: number, y: number) {
+  erase(x: number, y: number) {
     const key = Glyphmap.getKey(x, y);
 
     this.glyphs.delete(key);
@@ -589,13 +640,13 @@ export class Glyphmap extends CustomGameObject(
    * @param glyphs
    * @returns
    */
-  set(x: number, y: number, glyphs: GlyphLike[]) {
+  draw(x: number, y: number, glyphs: GlyphLike[]) {
     if (!this.checkBounds(x, y)) {
       return this;
     }
 
     if (!glyphs.length) {
-      return this.delete(x, y);
+      return this.erase(x, y);
     }
 
     const key = Glyphmap.getKey(x, y);
@@ -669,6 +720,55 @@ export class Glyphmap extends CustomGameObject(
 
   /**
    *
+   * @param worldX
+   * @param snapToFloor
+   * @param camera
+   * @returns
+   */
+  worldToCellX(worldX: number, snapToFloor = true, camera?: Phaser.Cameras.Scene2D.Camera) {
+    const cellWidth = this.currentCellWidth * this.scaleX;
+
+    camera = camera || this.scene.cameras.main;
+
+    // Find the world position relative to top left origin, factoring in the
+    // camera's horizontal scroll.
+    worldX = worldX - (this.getTopLeft().x + camera.scrollX * (1 - this.scrollFactorX));
+
+    const cellX = worldX / cellWidth;
+
+    return snapToFloor ? Math.floor(cellX) : cellX;
+  }
+
+  /**
+   *
+   * @param worldY
+   * @param snapToFloor
+   * @param camera
+   * @returns
+   */
+  worldToCellY(worldY: number, snapToFloor = true, camera?: Phaser.Cameras.Scene2D.Camera) {
+    const cellHeight = this.currentCellHeight * this.scaleY;
+
+    camera = camera || this.scene.cameras.main;
+
+    // Find the world position relative to top left origin, factoring in the
+    // camera's vertical scroll.
+    worldY = worldY - (this.getTopLeft().y + camera.scrollY * (1 - this.scrollFactorY));
+
+    const cellY = worldY / cellHeight;
+
+    return snapToFloor ? Math.floor(cellY) : cellY;
+  }
+
+  worldToCellXY(worldX: number, worldY: number, snapToFloor = true, camera?: Phaser.Cameras.Scene2D.Camera) {
+    return [this.worldToCellX(worldX, snapToFloor, camera), this.worldToCellY(worldY, snapToFloor, camera)] as [
+      number,
+      number
+    ];
+  }
+
+  /**
+   *
    * @returns
    */
   private addGlyphPluginEventListeners() {
@@ -735,8 +835,8 @@ export class Glyphmap extends CustomGameObject(
       this.currentForceSquareRatio
     );
 
-    this.currentCellWidth = width;
-    this.currentCellHeight = height;
+    this.currentCellWidth = width || 1;
+    this.currentCellHeight = height || 1;
 
     return this.setSize(this.widthInCells * this.currentCellWidth, this.heightInCells * this.currentCellHeight);
   }
