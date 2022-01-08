@@ -1,3 +1,12 @@
+/**
+ * Shared module.
+ *
+ * @author kidthales <kidthales@agogpixel.com>
+ * @copyright 2021-present AgogPixel
+ * @license {@link https://agogpixel.github.io/phaser3-glyph-plugin/LICENSE|MIT License}
+ * @module
+ */
+
 import colorString from 'color-string';
 
 /**
@@ -14,11 +23,6 @@ export type ColorLike =
   | Phaser.Types.Display.ColorObject
   | Phaser.Types.Display.InputColorObject
   | Phaser.Display.Color;
-
-/**
- * Font arguments tuple type.
- */
-export type FontArgs = ConstructorParameters<typeof Font>;
 
 /**
  * Union of CSS font family values.
@@ -95,40 +99,50 @@ export type FontWeight =
   | '900';
 
 /**
- *
+ * Tuple of character, foreground color, & optional background color types that
+ * can be used to represent a glyph.
  */
 export type GlyphLike = [CharLike, ColorLike, ColorLike?];
 
 /**
- *
+ * Available read colors formats.
+ * @internal
  */
 export type ReadColorsFormat = 'number' | '#RGBA' | 'rgba';
 
 /**
- *
+ * Number of bytes per UTF-16 character.
+ * @internal
  */
 export const bytesPerChar = 2;
 
 /**
- *
+ * Number of bytes per 4 channel color (RGBA).
+ * @internal
  */
 export const bytesPerColor = 4;
 
 /**
- *
+ * Number of bytes per glyph.
+ * @internal
  */
 export const bytesPerGlyph = bytesPerChar + 2 * bytesPerColor;
 
 /**
- *
+ * Default glyph background color (transparent).
+ * @internal
  */
 export const defaultGlyphBackgroundColor = 'rgba(0, 0, 0, 0)';
 
 /**
- *
- * @param start
- * @param end
- * @param multiple
+ * Check that (end - start) is a non-negative value congruent to specified
+ * multiple.
+ * @param start Start index.
+ * @param end End index.
+ * @param multiple Required multiple.
+ * @throws Error if negative amount or amount is not congruent with specified
+ * multiple.
+ * @internal
  */
 export function checkAmount(start: number, end: number, multiple: number) {
   const amount = end - start;
@@ -141,10 +155,13 @@ export function checkAmount(start: number, end: number, multiple: number) {
 }
 
 /**
- *
- * @param buffer
- * @param start
- * @param end
+ * Check that indexes fall within buffer bounds.
+ * @param buffer Buffer to check against.
+ * @param start Start index.
+ * @param end End index.
+ * @throws Error if indexes are out of bounds, or if end index is equal or less
+ * than start index.
+ * @internal
  */
 export function checkBufferIndexing(buffer: Uint8Array, start: number, end: number) {
   const result = start >= 0 && end > 0 && end - start > 0 && end <= buffer.length;
@@ -155,11 +172,16 @@ export function checkBufferIndexing(buffer: Uint8Array, start: number, end: numb
 }
 
 /**
- *
- * @param buffer
- * @param start
- * @param end
- * @returns
+ * Convert provided buffer to its corresponding hex string representation,
+ * prefixed with `0x`.
+ * @param buffer Buffer to convert.
+ * @param start (Default: 0) Start index.
+ * @param end (Optional) End index.
+ * @returns Hex string representation of the specified buffer, from start index
+ * to end index.
+ * @throws Error if indexes are out of bounds, or if end index is equal or less
+ * than start index.
+ * @internal
  */
 export function convertBufferToHexString(buffer: Uint8Array, start = 0, end?: number) {
   end = normalizeBufferEndIndex(buffer, end);
@@ -175,9 +197,12 @@ export function convertBufferToHexString(buffer: Uint8Array, start = 0, end?: nu
 }
 
 /**
- *
- * @param charlike
- * @returns
+ * Convert provided charlike to its corresponding hex string representation,
+ * prefixed with `0x`.
+ * @param charlike Charlike to convert.
+ * @returns Hex string representation of specified charlike.
+ * @throws Error if specified charlike is an empty string.
+ * @internal
  */
 export function convertCharLikeToHexString(charlike: CharLike) {
   const ch = convertCharLikeToString(charlike);
@@ -200,40 +225,48 @@ export function convertCharLikeToHexString(charlike: CharLike) {
 }
 
 /**
- *
- * @param charlike
- * @returns
+ * Converts specified charlike, which is a union type, to its corresponding
+ * string representation.
+ * @param charlike Charlike to convert.
+ * @returns String representation of specified charlike.
+ * @internal
  */
 export function convertCharLikeToString(charlike: CharLike) {
   return typeof charlike === 'number' ? String.fromCharCode(charlike) : charlike;
 }
 
 /**
- *
- * @param glyphs
- * @returns
+ * Create internal buffer representation of specified glyphlikes.
+ * @param glyphs Glyphlikes to create the buffer from.
+ * @returns Uint8Array buffer containing all specified glyph data in Big-Endian
+ * format.
+ * @internal
  */
 export function createGlyphsBuffer(glyphs: GlyphLike[]) {
   return writeGlyphsToBuffer(glyphs, new Uint8Array(bytesPerGlyph * glyphs.length));
 }
 
 /**
- *
- * @param buffer
- * @param end
- * @returns
+ * Ensure end index is defined or default to buffer length.
+ * @param buffer Buffer to compare with.
+ * @param end (Optional) End index candidate.
+ * @returns A defined end index.
+ * @internal
  */
 export function normalizeBufferEndIndex(buffer: Uint8Array, end?: number) {
   return typeof end !== 'number' ? buffer.length : end;
 }
 
 /**
- *
- * @param readColorsFormat
- * @param buffer
- * @param start
- * @param end
- * @returns
+ * Read color data from specified buffer.
+ * @param readColorsFormat Specifies return type & format.
+ * @param buffer Buffer to read from.
+ * @param start (Default: 0) Start index.
+ * @param end (Optional) End index.
+ * @returns Array of colors as defined by specified colors format.
+ * @throws Error if indexes are out of bounds, or if end index is equal or less
+ * than start index, or if read amount is not a multiple of 4.
+ * @internal
  */
 export function readColorsFromBuffer<T extends ReadColorsFormat>(
   readColorsFormat: T,
@@ -272,12 +305,15 @@ export function readColorsFromBuffer<T extends ReadColorsFormat>(
 }
 
 /**
- *
- * @param readColorsFormat
- * @param buffer
- * @param start
- * @param end
- * @returns
+ * Read glyph data from specified buffer.
+ * @param readColorsFormat Specifies return type & color format.
+ * @param buffer Buffer to read from.
+ * @param start (Default: 0) Start index.
+ * @param end (Optional) End index.
+ * @returns Array of glyphlikes as defined by specified colors format.
+ * @throws Error if indexes are out of bounds, or if end index is equal or less
+ * than start index, or if read amount is not a multiple of 10.
+ * @internal
  */
 export function readGlyphsFromBuffer<T extends ReadColorsFormat>(
   readColorsFormat: T,
@@ -310,11 +346,14 @@ export function readGlyphsFromBuffer<T extends ReadColorsFormat>(
 }
 
 /**
- *
- * @param buffer
- * @param start
- * @param end
- * @returns
+ * Read UTF-16 string from specified buffer.
+ * @param buffer Buffer to read from.
+ * @param start (Default: 0) Start index.
+ * @param end (Optional) End index.
+ * @returns UTF-16 string.
+ * @throws Error if indexes are out of bounds, or if end index is equal or less
+ * than start index, or if read amount is not an even number.
+ * @internal
  */
 export function readStringFromBuffer(buffer: Uint8Array, start = 0, end?: number) {
   end = normalizeBufferEndIndex(buffer, end);
@@ -331,11 +370,14 @@ export function readStringFromBuffer(buffer: Uint8Array, start = 0, end?: number
 }
 
 /**
- *
- * @param charlike
- * @param buffer
- * @param start
- * @returns
+ * Write specified charlike to specified buffer.
+ * @param charlike Charlike to write.
+ * @param buffer Buffer to write to.
+ * @param start (Default: 0) Start index.
+ * @returns Specified buffer.
+ * @throws Error if indexes are out of bounds, or if end index is equal or less
+ * than start index.
+ * @internal
  */
 export function writeCharLikeToBuffer(charlike: CharLike, buffer: Uint8Array, start = 0) {
   const codes = typeof charlike === 'number' ? [charlike] : Array.from(charlike).map((ch) => ch.charCodeAt(0));
@@ -356,11 +398,14 @@ export function writeCharLikeToBuffer(charlike: CharLike, buffer: Uint8Array, st
 }
 
 /**
- *
- * @param colorlike
- * @param buffer
- * @param start
- * @returns
+ * Write specified colorlike(s) to specified buffer.
+ * @param colorlike Colorlike(s) to write.
+ * @param buffer Buffer to write to.
+ * @param start (Default: 0) Start index.
+ * @returns Specified buffer.
+ * @throws Error if indexes are out of bounds, or if end index is equal or less
+ * than start index.
+ * @internal
  */
 export function writeColorLikeToBuffer(colorlike: ColorLike | ColorLike[], buffer: Uint8Array, start = 0) {
   const colors = Array.isArray(colorlike) ? colorlike : [colorlike];
@@ -403,11 +448,14 @@ export function writeColorLikeToBuffer(colorlike: ColorLike | ColorLike[], buffe
 }
 
 /**
- *
- * @param glyphs
- * @param buffer
- * @param start
- * @returns
+ * Write specified glyphlikes to specified buffers.
+ * @param glyphs Glyphlikes to write.
+ * @param buffer Buffer to write to.
+ * @param start (Default: 0) Start index.
+ * @returns Specified buffer.
+ * @throws Error if indexes are out of bounds, or if end index is equal or less
+ * than start index.
+ * @internal
  */
 export function writeGlyphsToBuffer(glyphs: GlyphLike[], buffer: Uint8Array, start = 0) {
   const glyphsLen = glyphs.length;
@@ -439,9 +487,9 @@ export function writeGlyphsToBuffer(glyphs: GlyphLike[], buffer: Uint8Array, sta
  */
 export class Font {
   /**
-   *
-   * @param font
-   * @returns
+   * Clone provided font.
+   * @param font Font to clone.
+   * @returns Cloned font.
    */
   static clone(font: Font): Font {
     return new Font(font.size, font.family, font.weight, font.style, font.variant);
@@ -459,9 +507,9 @@ export class Font {
    *
    * @param size Font size.
    * @param family Font family.
-   * @param weight [Default: normal] Font weight.
-   * @param style [Default: normal] Font style
-   * @param variant [Default: normal] Font variant
+   * @param weight (Default: 'normal') Font weight.
+   * @param style (Default: 'normal') Font style.
+   * @param variant (Default: 'normal') Font variant.
    */
   constructor(
     public size: number,

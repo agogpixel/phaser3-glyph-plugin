@@ -118,7 +118,7 @@ describe('Glyphmap', () => {
 
     const actual = (() => {
       const glyphmap = new Glyphmap(scene);
-      glyphmap.set(0, 0, [['Q', '#aaa']]).set(1, 1, [
+      glyphmap.draw(0, 0, [['Q', '#aaa']]).draw(1, 1, [
         ['R', '#aaa'],
         ['T', '#aaa']
       ]);
@@ -179,7 +179,7 @@ describe('Glyphmap', () => {
 
     const actual = (() => {
       const glyphmap = new Glyphmap(scene);
-      glyphmap.set(0, 0, [['Q', '#aaa']]).set(1, 1, [
+      glyphmap.draw(0, 0, [['Q', '#aaa']]).draw(1, 1, [
         ['R', '#aaa'],
         ['T', '#aaa']
       ]);
@@ -242,7 +242,7 @@ describe('Glyphmap', () => {
 
     const actual = (() => {
       const glyphmap = new Glyphmap(scene);
-      glyphmap.set(0, 0, [['Q', '#aaa']]).set(1, 1, [
+      glyphmap.draw(0, 0, [['Q', '#aaa']]).draw(1, 1, [
         ['R', '#aaa'],
         ['T', '#aaa']
       ]);
@@ -292,13 +292,13 @@ describe('Glyphmap', () => {
     expect(actual).toHaveBeenCalledTimes(expected);
   });
 
-  it('deletes map cell', () => {
+  it('erases map cell', () => {
     const input = [0, 0] as const;
 
     const actual = (() => {
       const glyphmap = new Glyphmap(scene);
       const spy = jest.spyOn(glyphmap['glyphs'], 'delete');
-      glyphmap.delete(...input).destroy();
+      glyphmap.erase(...input).destroy();
       return spy;
     })();
 
@@ -313,7 +313,7 @@ describe('Glyphmap', () => {
     const actual = (() => {
       const glyphmap = new Glyphmap(scene);
       const spy = jest.spyOn(glyphmap['glyphs'], 'set');
-      glyphmap.set(...input).destroy();
+      glyphmap.draw(...input).destroy();
       return spy;
     })();
 
@@ -322,13 +322,13 @@ describe('Glyphmap', () => {
     expect(actual).toHaveBeenCalledTimes(expected);
   });
 
-  it('deletes content when setting map cell with empty array of glyphs', () => {
+  it('erases content when setting map cell with empty array of glyphs', () => {
     const input = [0, 0, [] as GlyphLike[]] as const;
 
     const actual = (() => {
       const glyphmap = new Glyphmap(scene);
-      const spy = jest.spyOn(glyphmap, 'delete');
-      glyphmap.set(...input).destroy();
+      const spy = jest.spyOn(glyphmap, 'erase');
+      glyphmap.draw(...input).destroy();
       return spy;
     })();
 
@@ -337,7 +337,7 @@ describe('Glyphmap', () => {
     expect(actual).toHaveBeenCalledTimes(expected);
   });
 
-  it('sets map cell', () => {
+  it('draws map cell', () => {
     const input = [
       0,
       0,
@@ -350,7 +350,7 @@ describe('Glyphmap', () => {
     const actual = (() => {
       const glyphmap = new Glyphmap(scene);
       const spy = jest.spyOn(glyphmap['glyphs'], 'set');
-      glyphmap.set(...input).destroy();
+      glyphmap.draw(...input).destroy();
       return spy;
     })();
 
@@ -426,6 +426,134 @@ describe('Glyphmap', () => {
     expect(actual).toHaveBeenCalledTimes(expected);
   });
 
+  it('translates cell X coordinate to world X coordinate', () => {
+    const input = [10, 0] as const;
+
+    const actual = (() => {
+      const glyphmap = new Glyphmap(scene, 10, 10);
+      const result = glyphmap.cellToWorldX(...input);
+      glyphmap.destroy();
+      return result;
+    })();
+
+    // Assumes cell width is 1px in headless.
+    const expected = 20;
+
+    expect(actual).toEqual(expected);
+  });
+
+  it('translates cell Y coordinate to world Y coordinate', () => {
+    const input = [10, 0] as const;
+
+    const actual = (() => {
+      const glyphmap = new Glyphmap(scene, 10, 7);
+      const result = glyphmap.cellToWorldY(...input);
+      glyphmap.destroy();
+      return result;
+    })();
+
+    // Assumes cell height is 1px in headless.
+    const expected = 17;
+
+    expect(actual).toEqual(expected);
+  });
+
+  it('translates cell X,Y coordinate to world X,Y coordinate', () => {
+    const input = [4, 7, 0, 0] as const;
+
+    const actual = (() => {
+      const glyphmap = new Glyphmap(scene, 8, 7);
+      const result = glyphmap.cellToWorldXY(...input);
+      glyphmap.destroy();
+      return result;
+    })();
+
+    // Assumes cell width & height is 1px in headless.
+    const expected = [12, 14];
+
+    expect(actual).toEqual(expected);
+  });
+
+  it('translates world X coordinate to cell X coordinate', () => {
+    const input = 12;
+
+    const actual = (() => {
+      const glyphmap = new Glyphmap(scene, 10, 10);
+      const result = glyphmap.worldToCellX(input);
+      glyphmap.destroy();
+      return result;
+    })();
+
+    // Assumes cell width is 1px in headless.
+    const expected = 2;
+
+    expect(actual).toEqual(expected);
+  });
+
+  it('translates world X coordinate to cell X coordinate (no snap)', () => {
+    const input = [12, false] as const;
+
+    const actual = (() => {
+      const glyphmap = new Glyphmap(scene, 10, 10);
+      const result = glyphmap.worldToCellX(...input);
+      glyphmap.destroy();
+      return result;
+    })();
+
+    // Assumes cell width is 1px in headless.
+    const expected = 2;
+
+    expect(actual).toEqual(expected);
+  });
+
+  it('translates world Y coordinate to cell Y coordinate', () => {
+    const input = 12;
+
+    const actual = (() => {
+      const glyphmap = new Glyphmap(scene, 10, 10);
+      const result = glyphmap.worldToCellY(input);
+      glyphmap.destroy();
+      return result;
+    })();
+
+    // Assumes cell height is 1px in headless.
+    const expected = 2;
+
+    expect(actual).toEqual(expected);
+  });
+
+  it('translates world Y coordinate to cell Y coordinate (no snap)', () => {
+    const input = [12, false] as const;
+
+    const actual = (() => {
+      const glyphmap = new Glyphmap(scene, 10, 10);
+      const result = glyphmap.worldToCellY(...input);
+      glyphmap.destroy();
+      return result;
+    })();
+
+    // Assumes cell height is 1px in headless.
+    const expected = 2;
+
+    expect(actual).toEqual(expected);
+  });
+
+  it('translates world X,Y coordinate to cell X,Y coordinate', () => {
+    const input = [12, 12] as const;
+
+    const actual = (() => {
+      const glyphmap = new Glyphmap(scene, 8, 7);
+      const result = glyphmap.worldToCellXY(...input);
+      glyphmap.destroy();
+      return result;
+    })();
+
+    // Assumes cell width & height is 1px in headless.
+    const expected = [4, 5];
+
+    expect(actual).toEqual(expected);
+  });
+
   describe('CANVAS_RENDERER', () => {
     it('renders an empty glyphmap', () => {
       const input = [
@@ -459,7 +587,7 @@ describe('Glyphmap', () => {
 
       const actual = (() => {
         const spy = jest.spyOn(input[0].currentContext, 'drawImage');
-        input[1].set(0, 0, [
+        input[1].draw(0, 0, [
           ['A', '#fff'],
           ['#', '#efaa', '#0395']
         ]);
@@ -486,7 +614,7 @@ describe('Glyphmap', () => {
       const actual = (() => {
         const spy = jest.spyOn(input[0].currentContext, 'drawImage');
         input[1].skipCull = true;
-        input[1].set(0, 0, [
+        input[1].draw(0, 0, [
           ['A', '#fff'],
           ['#', '#efaa', '#0395']
         ]);
@@ -513,7 +641,7 @@ describe('Glyphmap', () => {
       const actual = (() => {
         const spy = jest.spyOn(input[0].currentContext, 'drawImage');
         input[1].alpha = 0;
-        input[1].set(0, 0, [
+        input[1].draw(0, 0, [
           ['A', '#fff'],
           ['#', '#efaa', '#0395']
         ]);
@@ -540,7 +668,7 @@ describe('Glyphmap', () => {
       const actual = (() => {
         const spy = jest.spyOn(input[0].currentContext, 'drawImage');
         input[1].alpha = 0;
-        input[1].set(0, 0, [
+        input[1].draw(0, 0, [
           ['A', '#fff'],
           ['#', '#efaa', '#0395']
         ]);
@@ -567,7 +695,7 @@ describe('Glyphmap', () => {
       const actual = (() => {
         const spy = jest.spyOn(input[0].currentContext, 'drawImage');
         input[0].antialias = false;
-        input[1].set(0, 0, [
+        input[1].draw(0, 0, [
           ['A', '#fff'],
           ['#', '#efaa', '#0395']
         ]);
@@ -658,7 +786,7 @@ describe('Glyphmap', () => {
         input[0]['boot']();
         input[1].pipeline = input[0].pipelines.get('MultiPipeline');
         const spy = jest.spyOn(input[1].pipeline, 'batchTexture' as never);
-        input[1].set(0, 0, [
+        input[1].draw(0, 0, [
           ['B', '#fff'],
           ['C', '#efaa', '#0395']
         ]);
@@ -682,7 +810,7 @@ describe('Glyphmap', () => {
         input[1].skipCull = true;
         input[1].pipeline = input[0].pipelines.get('MultiPipeline');
         const spy = jest.spyOn(input[1].pipeline, 'batchTexture' as never);
-        input[1].set(0, 0, [
+        input[1].draw(0, 0, [
           ['B', '#fff'],
           ['C', '#efaa', '#0395']
         ]);
@@ -706,7 +834,7 @@ describe('Glyphmap', () => {
         input[1].alpha = 0;
         input[1].pipeline = input[0].pipelines.get('MultiPipeline');
         const spy = jest.spyOn(input[1].pipeline, 'batchTexture' as never);
-        input[1].set(0, 0, [
+        input[1].draw(0, 0, [
           ['B', '#fff'],
           ['C', '#efaa', '#0395']
         ]);
@@ -734,7 +862,7 @@ describe('Glyphmap', () => {
         input[1].alpha = 0;
         input[1].pipeline = input[0].pipelines.get('MultiPipeline');
         const spy = jest.spyOn(input[1].pipeline, 'batchTexture' as never);
-        input[1].set(0, 0, [
+        input[1].draw(0, 0, [
           ['B', '#fff'],
           ['C', '#efaa', '#0395']
         ]);

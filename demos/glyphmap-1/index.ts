@@ -14,9 +14,9 @@ export default demoHandlerFactory(async (config) => {
       for (let y = 0; y < glyphmap.heightInCells; ++y) {
         for (let x = 0; x < glyphmap.widthInCells; ++x) {
           if (!y || !x || y === glyphmap.heightInCells - 1 || x === glyphmap.widthInCells - 1) {
-            glyphmap.set(x, y, [['#', '#EEEEEEFE', '#4444']]);
+            glyphmap.draw(x, y, [['#', '#EEEEEEFE', '#4444']]);
           } else {
-            glyphmap.set(x, y, [['.', '#FFF']]);
+            glyphmap.draw(x, y, [['.', '#FFF']]);
           }
         }
       }
