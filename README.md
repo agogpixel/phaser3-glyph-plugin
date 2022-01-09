@@ -34,9 +34,9 @@ Phaser 3 glyph plugin. Inspired by [rot.js](https://ondras.github.io/rot.js/hp/)
             for (let y = 0; y < glyphmap.heightInCells; ++y) {
                 for (let x = 0; x < glyphmap.widthInCells; ++x) {
                     if (!y || !x || y === glyphmap.heightInCells - 1 || x === glyphmap.widthInCells - 1) {
-                        glyphmap.set(x, y, [['#', '#EEEEEEFE', '#4444']]);
+                        glyphmap.draw(x, y, [['#', '#EEEEEEFE', '#4444']]);
                     } else {
-                        glyphmap.set(x, y, [['.', '#FFF']]);
+                        glyphmap.draw(x, y, [['.', '#FFF']]);
                     }
                 }
             }
@@ -82,7 +82,7 @@ npm start
 Live development with demos:
 
 ```shell
-npm run start-demos
+npm run demos
 ```
 
 Lint files:

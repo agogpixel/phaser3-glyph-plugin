@@ -236,10 +236,11 @@ export function convertCharLikeToString(charlike: CharLike) {
 }
 
 /**
- *
- * @param hex
- * @returns
- * @throws
+ * Converts specified hex string to its corresponding buffer representation.
+ * @param hex Hex string to convert.
+ * @returns Buffer representation of specified hex string.
+ * @throws Error if specified hex string is not an even number in length.
+ * @internal
  */
 export function convertHexStringToBuffer(hex: `0x${string}`) {
   if (hex.length % 2 !== 0) {

@@ -8,8 +8,8 @@
   "scripts": {
     "postinstall": "husky install",
     "start": "jest --watch",
-    "start-demos": "cross-env DEMOS=true webpack-dev-server --progress --color",
     "test": "jest --coverage",
+    "demos": "cross-env DEMOS=true webpack-dev-server --progress --color",
     "prebuild": "cavy clean dist",
     "build": "npm run build-bundle && npm run build-canvas-bundle && npm run build-webgl-bundle && npm run build-js",
     "postbuild": "cavy copy dist && shx cp LICENSE README.md dist",

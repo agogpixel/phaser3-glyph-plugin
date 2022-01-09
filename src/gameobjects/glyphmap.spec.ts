@@ -1,7 +1,7 @@
 import { GlyphPlugin } from '../plugin';
 import { Font, GlyphLike } from '../shared';
 
-import { Glyphmap } from './glyphmap';
+import { Glyphmap, Glyphset } from './glyphmap';
 
 describe('Glyphmap', () => {
   let game: Phaser.Game;
@@ -42,9 +42,9 @@ describe('Glyphmap', () => {
     const input = new Glyphmap(scene);
 
     const actual = (() => {
-      const ok = input instanceof Glyphmap;
+      const result = input instanceof Glyphmap;
       input.destroy();
-      return ok;
+      return result;
     })();
 
     const expected = true;
@@ -122,13 +122,13 @@ describe('Glyphmap', () => {
         ['R', '#aaa'],
         ['T', '#aaa']
       ]);
-      const spy = jest.spyOn(glyphmap['textures'], 'set');
+      const spy = jest.spyOn(glyphmap['glyphset'], 'update');
       glyphmap.font = input;
       glyphmap.destroy();
       return spy;
     })();
 
-    const expected = 2;
+    const expected = 1;
 
     expect(actual).toHaveBeenCalledTimes(expected);
   });
@@ -183,13 +183,13 @@ describe('Glyphmap', () => {
         ['R', '#aaa'],
         ['T', '#aaa']
       ]);
-      const spy = jest.spyOn(glyphmap['textures'], 'set');
+      const spy = jest.spyOn(glyphmap['glyphset'], 'update');
       glyphmap.forceSquareRatio = input;
       glyphmap.destroy();
       return spy;
     })();
 
-    const expected = 2;
+    const expected = 1;
 
     expect(actual).toHaveBeenCalledTimes(expected);
   });
@@ -246,13 +246,13 @@ describe('Glyphmap', () => {
         ['R', '#aaa'],
         ['T', '#aaa']
       ]);
-      const spy = jest.spyOn(glyphmap['textures'], 'set');
+      const spy = jest.spyOn(glyphmap['glyphset'], 'update');
       glyphmap.glyphPlugin = input;
       glyphmap.destroy();
       return spy;
     })();
 
-    const expected = 2;
+    const expected = 1;
 
     expect(actual).toHaveBeenCalledTimes(expected);
     input.destroy();
@@ -282,7 +282,7 @@ describe('Glyphmap', () => {
     const input = new Glyphmap(scene);
 
     const actual = (() => {
-      const spy = jest.spyOn(input['textures'], 'clear');
+      const spy = jest.spyOn(input['mapData'], 'clear');
       input.clear().destroy();
       return spy;
     })();
@@ -297,7 +297,8 @@ describe('Glyphmap', () => {
 
     const actual = (() => {
       const glyphmap = new Glyphmap(scene);
-      const spy = jest.spyOn(glyphmap['textures'], 'delete');
+      glyphmap.draw(0, 0, [['#', '#483']]);
+      const spy = jest.spyOn(glyphmap['mapData'], 'delete');
       glyphmap.erase(...input).destroy();
       return spy;
     })();
@@ -312,7 +313,7 @@ describe('Glyphmap', () => {
 
     const actual = (() => {
       const glyphmap = new Glyphmap(scene);
-      const spy = jest.spyOn(glyphmap['textures'], 'set');
+      const spy = jest.spyOn(glyphmap['mapData'], 'set');
       glyphmap.draw(...input).destroy();
       return spy;
     })();
@@ -349,7 +350,7 @@ describe('Glyphmap', () => {
 
     const actual = (() => {
       const glyphmap = new Glyphmap(scene);
-      const spy = jest.spyOn(glyphmap['textures'], 'set');
+      const spy = jest.spyOn(glyphmap['mapData'], 'set');
       glyphmap.draw(...input).destroy();
       return spy;
     })();
@@ -875,6 +876,156 @@ describe('Glyphmap', () => {
 
       expect(actual).toHaveBeenCalledTimes(expected);
       actual.mockReset();
+    });
+  });
+
+  describe('Glyphset', () => {
+    it('instantiates', () => {
+      const input = new Glyphset();
+      const actual = input instanceof Glyphset;
+      const expected = true;
+
+      expect(actual).toEqual(expected);
+    });
+
+    it('adds a texture', () => {
+      const input = game.textures.createCanvas('0x00000000000000000000');
+
+      const actual = (() => {
+        const glyphset = new Glyphset();
+        const id = glyphset.add(input);
+        input.destroy();
+        return id;
+      })();
+
+      const expected = 1;
+
+      expect(actual).toEqual(expected);
+    });
+
+    it('adds the same texture multiple times, uses same id & tracks count', () => {
+      const input = game.textures.createCanvas('0x00000000000000000000');
+
+      const actual = (() => {
+        const glyphset = new Glyphset();
+        const spy = jest.spyOn(glyphset['idCounts'], 'set');
+        glyphset.add(input);
+        const id = glyphset.add(input);
+        input.destroy();
+        return [id, spy];
+      })();
+
+      const expected = [1, 3];
+
+      expect(actual[0]).toEqual(expected[0]);
+      expect(actual[1]).toHaveBeenCalledTimes(expected[1]);
+    });
+
+    it('clears textures', () => {
+      const input = game.textures.createCanvas('0x00000000000000000000');
+
+      const actual = (() => {
+        const glyphset = new Glyphset();
+        const spy = jest.spyOn(glyphset['textures'], 'clear');
+        glyphset.add(input);
+        glyphset.clear();
+        input.destroy();
+        return spy;
+      })();
+
+      const expected = 1;
+
+      expect(actual).toHaveBeenCalledTimes(expected);
+    });
+
+    it('gets texture', () => {
+      const input = game.textures.createCanvas('0x00000000000000000000');
+
+      const actual = (() => {
+        const glyphset = new Glyphset();
+        const id = glyphset.add(input);
+        return glyphset.get(id);
+      })();
+
+      const expected = input;
+
+      expect(actual).toEqual(expected);
+      input.destroy();
+    });
+
+    it('checks for texture', () => {
+      const input = game.textures.createCanvas('0x00000000000000000000');
+
+      const actual = (() => {
+        const glyphset = new Glyphset();
+        const results: boolean[] = [];
+        results.push(glyphset.has(1));
+        glyphset.add(input);
+        results.push(glyphset.has(1));
+        input.destroy();
+        return results;
+      })();
+
+      const expected = [false, true];
+
+      expect(actual).toEqual(expected);
+    });
+
+    it('does nothing when removing with an unknown id', () => {
+      const input = 17;
+
+      const actual = (() => {
+        const glyphset = new Glyphset();
+        const spy = jest.spyOn(glyphset['idCounts'], 'get');
+        glyphset.remove(input);
+        return spy;
+      })();
+
+      const expected = 0;
+
+      expect(actual).toHaveBeenCalledTimes(expected);
+    });
+
+    it('removes the same texture multiple times & tracks count', () => {
+      const input = game.textures.createCanvas('0x00000000000000000000');
+
+      const actual = (() => {
+        const glyphset = new Glyphset();
+        glyphset.add(input);
+        const id = glyphset.add(input);
+        const deleteSpy = jest.spyOn(glyphset['textures'], 'delete');
+        const setSpy = jest.spyOn(glyphset['idCounts'], 'set');
+        glyphset.remove(id).remove(id);
+        input.destroy();
+        return [deleteSpy, setSpy];
+      })();
+
+      const expected = [1, 1];
+
+      expect(actual[0]).toHaveBeenCalledTimes(expected[0]);
+      expect(actual[1]).toHaveBeenCalledTimes(expected[1]);
+    });
+
+    it('updates textures', () => {
+      const input = [
+        game.textures.createCanvas('0x00000000000000000000'),
+        game.textures.createCanvas('0x00000000000000000001')
+      ] as const;
+
+      const actual = (() => {
+        const glyphset = new Glyphset();
+        glyphset.add(input[0]);
+        glyphset.add(input[1]);
+        const spy = jest.spyOn(glyphset['textures'], 'set');
+        glyphset.update(game.plugins.get('GlyphPlugin') as GlyphPlugin, new Font(24, 'monospace'), false);
+        input[0].destroy();
+        input[1].destroy();
+        return spy;
+      })();
+
+      const expected = 2;
+
+      expect(actual).toHaveBeenCalledTimes(expected);
     });
   });
 });
