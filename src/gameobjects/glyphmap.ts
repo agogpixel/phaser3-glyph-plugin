@@ -30,8 +30,8 @@ import {
 import { CustomGameObject } from '@agogpixel/phaser3-ts-utils/mixins/gameobjects/custom-gameobject';
 
 import { GlyphPlugin, GlyphPluginEvent } from '../plugin';
-import type { GlyphLike } from '../shared';
-import { bytesPerGlyph, createGlyphsBuffer, Font } from '../shared';
+import { convertHexStringToBuffer, GlyphLike } from '../shared';
+import { Font } from '../shared';
 
 /**
  * Glyphmap factory type.
@@ -211,7 +211,8 @@ if (typeof WEBGL_RENDERER) {
     const halfWidth = cellWidth * 0.5;
     const halfHeight = cellHeight * 0.5;
 
-    const textures = src['textures'];
+    const mapData = src['mapData'];
+    const glyphset = src['glyphset'];
     const getKey = Glyphmap['getKey'];
 
     renderer.pipelines.preBatch(src);
@@ -220,15 +221,15 @@ if (typeof WEBGL_RENDERER) {
       for (let indexX = cullBoundsX; indexX < cullBoundsEndX; ++indexX) {
         const key = getKey(indexX, indexY);
 
-        if (!textures.has(key)) {
+        if (!mapData.has(key)) {
           continue;
         }
 
-        const cellTextures = textures.get(key);
-        const cellTexturesLen = cellTextures.length;
+        const cellTextureIds = mapData.get(key);
+        const cellTextureIdsLen = cellTextureIds.length;
 
-        for (let ix = 0; ix < cellTexturesLen; ++ix) {
-          const texture = cellTextures[ix].get().source.glTexture;
+        for (let ix = 0; ix < cellTextureIdsLen; ++ix) {
+          const texture = glyphset.get(cellTextureIds[ix]).get().source.glTexture;
 
           const textureUnit = pipeline.setTexture2D(texture);
           const tint = getTint(0xffffff, alpha);
@@ -342,25 +343,26 @@ if (typeof CANVAS_RENDERER) {
     const halfWidth = cellWidth * 0.5;
     const halfHeight = cellHeight * 0.5;
 
-    const textures = src['textures'];
+    const mapData = src['mapData'];
+    const glyphset = src['glyphset'];
     const getKey = Glyphmap['getKey'];
 
     for (let y = cullBoundsY; y < cullBoundsEndY; ++y) {
       for (let x = cullBoundsX; x < cullBoundsEndX; ++x) {
         const key = getKey(x, y);
 
-        if (!textures.has(key)) {
+        if (!mapData.has(key)) {
           continue;
         }
 
         ctx.save();
         ctx.translate(x * cellWidth + halfWidth, y * cellHeight + halfHeight);
 
-        const cellTextures = textures.get(key);
-        const cellTexturesLen = cellTextures.length;
+        const cellTextureIds = mapData.get(key);
+        const cellTextureIdsLen = cellTextureIds.length;
 
-        for (let ix = 0; ix < cellTexturesLen; ++ix) {
-          const sourceImage = cellTextures[ix].getSourceImage() as HTMLImageElement | HTMLCanvasElement;
+        for (let ix = 0; ix < cellTextureIdsLen; ++ix) {
+          const sourceImage = glyphset.get(cellTextureIds[ix]).getSourceImage() as HTMLImageElement | HTMLCanvasElement;
 
           ctx.drawImage(
             sourceImage,
@@ -450,14 +452,14 @@ export class Glyphmap extends CustomGameObject(
   protected readonly renderWebGL = renderWebGL;
 
   /**
-   * Glyph data, mapping position key to glyphs buffer.
+   * Dynamically track & manage glyph textures.
    */
-  private readonly glyphs = new Map<string, Uint8Array>();
+  private readonly glyphset = new Glyphset();
 
   /**
-   * Glyph texture data, mapping position key to glyph textures.
+   * Glyphmap data, mapping position key to glyph texture ids.
    */
-  private readonly textures = new Map<string, Phaser.Textures.Texture[]>();
+  private readonly mapData = new Map<string, number[]>();
 
   /**
    * Track current glyph cell height, in pixels.
@@ -651,23 +653,26 @@ export class Glyphmap extends CustomGameObject(
    * @returns Glyphmap instance for further chaining.
    */
   clear() {
-    this.glyphs.clear();
-    this.textures.clear();
-
+    this.mapData.clear();
+    this.glyphset.clear();
     return this;
   }
 
   /**
    * Erase glyphs at specified cell position.
-   * @param x
-   * @param y
+   * @param x Cell X-coordinate.
+   * @param y Cell Y-coordinate.
    * @returns Glyphmap instance for further chaining.
    */
   erase(x: number, y: number) {
     const key = Glyphmap.getKey(x, y);
 
-    this.glyphs.delete(key);
-    this.textures.delete(key);
+    if (!this.mapData.has(key)) {
+      return this;
+    }
+
+    this.mapData.get(key).forEach((id) => this.glyphset.remove(id));
+    this.mapData.delete(key);
 
     return this;
   }
@@ -703,14 +708,13 @@ export class Glyphmap extends CustomGameObject(
     const key = Glyphmap.getKey(x, y);
 
     const glyphPlugin = this.glyphPlugin;
+    const glyphset = this.glyphset;
     const font = this.currentFont;
     const forceSquareRatio = this.currentForceSquareRatio;
 
-    this.glyphs.set(key, createGlyphsBuffer(glyphs));
-
-    this.textures.set(
+    this.mapData.set(
       key,
-      glyphs.map((glyph) => glyphPlugin.getTexture([glyph], font, forceSquareRatio))
+      glyphs.map((glyph) => glyphset.add(glyphPlugin.getTexture([glyph], font, forceSquareRatio)))
     );
 
     return this;
@@ -918,23 +922,151 @@ export class Glyphmap extends CustomGameObject(
    * @returns Glyphmap instance for further chaining.
    */
   private updateTextures() {
-    const font = this.currentFont;
-    const forceSquareRatio = this.currentForceSquareRatio;
+    this.glyphset.update(this.glyphPlugin, this.currentFont, this.currentForceSquareRatio);
+    return this;
+  }
+}
+
+/**
+ * Manages glyphmap textures.
+ * @internal
+ */
+export class Glyphset {
+  /**
+   * Read the first section of glyph texture key (hex string containing ch, fg, & bg data).
+   * @param texture Texture generated by a glyph plugin.
+   * @returns Hex string containing ch, fg, & bg data.
+   */
+  private static readMinimalGlyphString(texture: Phaser.Textures.Texture) {
+    return texture.key.split(' ')[0] as `0x${string}`;
+  }
+
+  /**
+   * Map numeric id to texture.
+   */
+  private readonly textures = new Map<number, Phaser.Textures.Texture>();
+
+  /**
+   * Map hex string to numeric id.
+   */
+  private readonly texturesIndex = new Map<`0x${string}`, number>();
+
+  /**
+   * Track the number of times a numeric id has been added & removed.
+   */
+  private readonly idCounts = new Map<number, number>();
+
+  /**
+   * Current id count.
+   */
+  private idCount = 0;
+
+  /**
+   * Add texture to glyphset. If duplicate, id is maintained and count is
+   * increased.
+   * @param texture Texture generated by a glyph plugin.
+   * @returns The numeric id of this texture in the glyphset.
+   */
+  add(texture: Phaser.Textures.Texture) {
+    const hex = Glyphset.readMinimalGlyphString(texture);
+
+    if (this.texturesIndex.has(hex)) {
+      const id = this.texturesIndex.get(hex);
+      this.idCounts.set(id, this.idCounts.get(id) + 1);
+      return id;
+    }
+
+    const id = ++this.idCount;
+
+    this.textures.set(id, texture);
+    this.texturesIndex.set(hex, id);
+
+    if (!this.idCounts.has(id)) {
+      this.idCounts.set(id, 0);
+    }
+
+    this.idCounts.set(id, this.idCounts.get(id) + 1);
+
+    return id;
+  }
+
+  /**
+   * Clear glyphset data & state.
+   * @returns Reference to glyphset for further chaining.
+   */
+  clear() {
+    this.textures.clear();
+    this.texturesIndex.clear();
+    this.idCounts.clear();
+    this.idCount = 0;
+    return this;
+  }
+
+  /**
+   * Get texture referenced by specified ID.
+   * @param id Numeric texture ID.
+   * @returns Reference to texture, if it exists.
+   */
+  get(id: number) {
+    return this.textures.get(id);
+  }
+
+  /**
+   * Check if texture reference by specified ID exists in the glyphset.
+   * @param id Numeric texture ID.
+   * @returns Boolean value indicating existence within the glyphset.
+   */
+  has(id: number) {
+    return this.textures.has(id);
+  }
+
+  /**
+   * Remove texture reference by specified ID from glyphset. If this texture
+   * has been duplicated, texture is kept and ID count is decreased.
+   * @param id Numeric texture ID.
+   * @returns Reference to glyphset for further chaining.
+   */
+  remove(id: number) {
+    if (!this.textures.has(id)) {
+      return this;
+    }
+
+    const idCount = this.idCounts.get(id) - 1;
+
+    if (idCount <= 0) {
+      const texture = this.textures.get(id);
+      const hex = Glyphset.readMinimalGlyphString(texture);
+
+      this.textures.delete(id);
+      this.texturesIndex.delete(hex);
+      this.idCounts.delete(id);
+    } else {
+      this.idCounts.set(id, idCount);
+    }
+
+    return this;
+  }
+
+  /**
+   * Update textures contained within the glyphset on the fly using specified
+   * plugin, font, & force square ratio combination.
+   * @param glyphPlugin Glyph plugin to use.
+   * @param font Font to use.
+   * @param forceSquareRatio Force square ratio?
+   * @returns Reference to glyphset for further chaining.
+   */
+  update(glyphPlugin: GlyphPlugin, font: Font, forceSquareRatio: boolean) {
     const textures = this.textures;
 
-    const getTextureFromBuffer = this.glyphPlugin['getTextureFromBuffer'].bind(
-      this.glyphPlugin
-    ) as typeof this.glyphPlugin['getTextureFromBuffer'];
+    const getTextureFromBuffer = glyphPlugin['getTextureFromBuffer'].bind(
+      glyphPlugin
+    ) as typeof glyphPlugin['getTextureFromBuffer'];
 
-    for (const [key, buffer] of this.glyphs) {
-      const cellTextures: Phaser.Textures.Texture[] = [];
-      const bufferLen = buffer.length;
-
-      for (let ix = 0; ix < bufferLen; ix += bytesPerGlyph) {
-        cellTextures.push(getTextureFromBuffer(buffer.subarray(ix, ix + bytesPerGlyph), font, forceSquareRatio));
-      }
-
-      textures.set(key, cellTextures);
+    for (const [key, texture] of textures) {
+      textures.set(
+        key,
+        getTextureFromBuffer(convertHexStringToBuffer(Glyphset.readMinimalGlyphString(texture)), font, forceSquareRatio)
+      );
     }
 
     return this;

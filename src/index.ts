@@ -12,3 +12,4 @@ export { Glyphmap } from './gameobjects/glyphmap';
 export type { GlyphPluginInitData } from './plugin';
 export { GlyphPlugin, GlyphPluginEvent } from './plugin';
 export type { CharLike, ColorLike, GlyphLike } from './shared';
+export { Font } from './shared';

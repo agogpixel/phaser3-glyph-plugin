@@ -17,6 +17,12 @@ const demos = [
     'Input handling with Glyphmap',
     async (...args: DemoArgs) =>
       (await import(/* webpackChunkName: "demo-glyphmap-2" */ './glyphmap-2')).default(...args)
+  ],
+  [
+    'glyphmap-3',
+    'Dynamic font with Glyphmap',
+    async (...args: DemoArgs) =>
+      (await import(/* webpackChunkName: "demo-glyphmap-3" */ './glyphmap-3')).default(...args)
   ]
 ] as const;
 

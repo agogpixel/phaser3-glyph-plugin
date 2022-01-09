@@ -1,4 +1,4 @@
-import type { ColorLike, GlyphLike } from './shared';
+import { ColorLike, convertHexStringToBuffer, GlyphLike } from './shared';
 import {
   bytesPerColor,
   bytesPerChar,
@@ -226,6 +226,32 @@ describe('convertCharLikeToString', () => {
     const input = '#';
     const actual = convertCharLikeToString(input);
     const expected = '#';
+
+    expect(actual).toEqual(expected);
+  });
+});
+
+describe('convertHexStringToBuffer', () => {
+  it('is a function', () => {
+    const input = convertHexStringToBuffer;
+    const actual = typeof input;
+    const expected = 'function';
+
+    expect(actual).toEqual(expected);
+  });
+
+  it('throws error when give hex string of uneven length', () => {
+    const input = '0xaa03f';
+    const actual = () => convertHexStringToBuffer(input);
+    const expected = `Invalid hex string: ${input}; must be an even number in length`;
+
+    expect(actual).toThrow(expected);
+  });
+
+  it('converts a hex string to a buffer', () => {
+    const input = '0xaa03fd';
+    const actual = convertHexStringToBuffer(input);
+    const expected = new Uint8Array([0xaa, 0x03, 0xfd]);
 
     expect(actual).toEqual(expected);
   });
