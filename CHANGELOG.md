@@ -11,6 +11,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 -   Font class included in public API.
 -   Glyphmap with dynamic font demo.
 
+### Removed
+
+-   Remove extraneous glyph data from glyphmap instance; use texture keys to reconstitute glyph data when refreshing.
+
 ## [0.2.0] - 2022-01-08
 
 ### Added

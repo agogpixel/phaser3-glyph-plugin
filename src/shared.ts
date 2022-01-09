@@ -236,6 +236,25 @@ export function convertCharLikeToString(charlike: CharLike) {
 }
 
 /**
+ *
+ * @param hex
+ * @returns
+ * @throws
+ */
+export function convertHexStringToBuffer(hex: `0x${string}`) {
+  if (hex.length % 2 !== 0) {
+    throw new Error(`Invalid hex string: ${hex}; must be an even number in length`);
+  }
+
+  return new Uint8Array(
+    hex
+      .slice(2)
+      .match(/.{1,2}/g)
+      .map((byte) => parseInt(byte, 16))
+  );
+}
+
+/**
  * Create internal buffer representation of specified glyphlikes.
  * @param glyphs Glyphlikes to create the buffer from.
  * @returns Uint8Array buffer containing all specified glyph data in Big-Endian

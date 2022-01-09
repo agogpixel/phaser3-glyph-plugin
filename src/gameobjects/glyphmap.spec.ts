@@ -282,7 +282,7 @@ describe('Glyphmap', () => {
     const input = new Glyphmap(scene);
 
     const actual = (() => {
-      const spy = jest.spyOn(input['glyphs'], 'clear');
+      const spy = jest.spyOn(input['textures'], 'clear');
       input.clear().destroy();
       return spy;
     })();
@@ -297,7 +297,7 @@ describe('Glyphmap', () => {
 
     const actual = (() => {
       const glyphmap = new Glyphmap(scene);
-      const spy = jest.spyOn(glyphmap['glyphs'], 'delete');
+      const spy = jest.spyOn(glyphmap['textures'], 'delete');
       glyphmap.erase(...input).destroy();
       return spy;
     })();
@@ -312,7 +312,7 @@ describe('Glyphmap', () => {
 
     const actual = (() => {
       const glyphmap = new Glyphmap(scene);
-      const spy = jest.spyOn(glyphmap['glyphs'], 'set');
+      const spy = jest.spyOn(glyphmap['textures'], 'set');
       glyphmap.draw(...input).destroy();
       return spy;
     })();
@@ -349,7 +349,7 @@ describe('Glyphmap', () => {
 
     const actual = (() => {
       const glyphmap = new Glyphmap(scene);
-      const spy = jest.spyOn(glyphmap['glyphs'], 'set');
+      const spy = jest.spyOn(glyphmap['textures'], 'set');
       glyphmap.draw(...input).destroy();
       return spy;
     })();

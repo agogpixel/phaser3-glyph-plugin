@@ -30,7 +30,7 @@ import {
 import { CustomGameObject } from '@agogpixel/phaser3-ts-utils/mixins/gameobjects/custom-gameobject';
 
 import { GlyphPlugin, GlyphPluginEvent } from '../plugin';
-import type { GlyphLike } from '../shared';
+import { convertHexStringToBuffer, GlyphLike } from '../shared';
 import { bytesPerGlyph, createGlyphsBuffer, Font } from '../shared';
 
 /**
@@ -450,11 +450,6 @@ export class Glyphmap extends CustomGameObject(
   protected readonly renderWebGL = renderWebGL;
 
   /**
-   * Glyph data, mapping position key to glyphs buffer.
-   */
-  private readonly glyphs = new Map<string, Uint8Array>();
-
-  /**
    * Glyph texture data, mapping position key to glyph textures.
    */
   private readonly textures = new Map<string, Phaser.Textures.Texture[]>();
@@ -651,9 +646,7 @@ export class Glyphmap extends CustomGameObject(
    * @returns Glyphmap instance for further chaining.
    */
   clear() {
-    this.glyphs.clear();
     this.textures.clear();
-
     return this;
   }
 
@@ -664,11 +657,7 @@ export class Glyphmap extends CustomGameObject(
    * @returns Glyphmap instance for further chaining.
    */
   erase(x: number, y: number) {
-    const key = Glyphmap.getKey(x, y);
-
-    this.glyphs.delete(key);
-    this.textures.delete(key);
-
+    this.textures.delete(Glyphmap.getKey(x, y));
     return this;
   }
 
@@ -705,8 +694,6 @@ export class Glyphmap extends CustomGameObject(
     const glyphPlugin = this.glyphPlugin;
     const font = this.currentFont;
     const forceSquareRatio = this.currentForceSquareRatio;
-
-    this.glyphs.set(key, createGlyphsBuffer(glyphs));
 
     this.textures.set(
       key,
@@ -926,15 +913,16 @@ export class Glyphmap extends CustomGameObject(
       this.glyphPlugin
     ) as typeof this.glyphPlugin['getTextureFromBuffer'];
 
-    for (const [key, buffer] of this.glyphs) {
-      const cellTextures: Phaser.Textures.Texture[] = [];
-      const bufferLen = buffer.length;
+    for (const [key, cellTextures] of textures) {
+      const newCellTextures: Phaser.Textures.Texture[] = [];
 
-      for (let ix = 0; ix < bufferLen; ix += bytesPerGlyph) {
-        cellTextures.push(getTextureFromBuffer(buffer.subarray(ix, ix + bytesPerGlyph), font, forceSquareRatio));
-      }
+      cellTextures.forEach((tex) =>
+        newCellTextures.push(
+          getTextureFromBuffer(convertHexStringToBuffer(tex.key.split(' ')[0] as never), font, forceSquareRatio)
+        )
+      );
 
-      textures.set(key, cellTextures);
+      textures.set(key, newCellTextures);
     }
 
     return this;
