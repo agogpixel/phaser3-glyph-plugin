@@ -1,6 +1,6 @@
 {
   "name": "@agogpixel/phaser3-glyph-plugin",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Phaser 3 glyph plugin.",
   "main": "main.bundle.js",
   "module": "main.bundle.js",
