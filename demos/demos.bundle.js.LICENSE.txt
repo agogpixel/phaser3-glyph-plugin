@@ -49,12 +49,3 @@ PERFORMANCE OF THIS SOFTWARE.
  * @license {@link https://agogpixel.github.io/phaser3-glyph-plugin/LICENSE|MIT License}
  * @module
  */
-
-/**
- * Shared module.
- *
- * @author kidthales <kidthales@agogpixel.com>
- * @copyright 2021-present AgogPixel
- * @license {@link https://agogpixel.github.io/phaser3-glyph-plugin/LICENSE|MIT License}
- * @module
- */
