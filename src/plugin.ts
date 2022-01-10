@@ -9,7 +9,8 @@
 
 import { createPluginApiMixin } from '@agogpixel/phaser3-ts-utils/mixins/scene/create-plugin-api-mixin';
 
-import { GlyphmapCreator, glyphmapCreator, GlyphmapFactory, glyphmapFactory } from './gameobjects/glyphmap';
+import type { GlyphCreator, GlyphFactory } from './gameobjects/glyph';
+import type { GlyphmapCreator, GlyphmapFactory } from './gameobjects/glyphmap';
 import type { CharLike, GlyphLike } from './shared';
 import {
   convertBufferToHexString,
@@ -63,6 +64,21 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
     'advancedTextMetrics' | 'measurementCh' | 'getFrameDimensions' | 'getTexture',
     {
       /**
+       * Glyph factory.
+       * @param x (Default: 0) World X-coordinate.
+       * @param y (Default: 0) World Y-coordinate.
+       * @param glyph (Optional) Glyphlike data.
+       * @param font (Optional) Font to use.
+       * @param forceSquareRatio (Optional) Force square glyph frames/cells,
+       * using the greater of width or height of the associated glyph plugin's
+       * measurement character.
+       * @param pluginKey (Optional) Glyph plugin key.
+       * @returns Glyph GameObject instance that has been added to the
+       * scene's display list.
+       */
+      glyph: GlyphFactory;
+
+      /**
        * Glyphmap factory.
        * @param x (Default: 0) X-coordinate in world space.
        * @param y (Default: 0) Y-coordinate in world space.
@@ -77,6 +93,17 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
       glyphmap: GlyphmapFactory;
     },
     {
+      /**
+       * Glyph creator.
+       * @param config The configuration object this Game Object will use to
+       * create itself.
+       * @param addToScene (Default: true) Add this Game Object to the Scene
+       * after creating it? If set this argument overrides the `add` property in
+       * the config object.
+       * @returns Glyph GameObject instance.
+       */
+      glyph: GlyphCreator;
+
       /**
        * Glyphmap creator.
        * @param config The configuration object this Game Object will use to
@@ -415,6 +442,12 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   constructor(pluginManager: Phaser.Plugins.PluginManager) {
     super(pluginManager);
 
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { glyphFactory, glyphCreator } = require('./gameobjects/glyph');
+    pluginManager.registerGameObject('glyph', glyphFactory, glyphCreator);
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { glyphmapFactory, glyphmapCreator } = require('./gameobjects/glyphmap');
     pluginManager.registerGameObject('glyphmap', glyphmapFactory, glyphmapCreator);
   }
 

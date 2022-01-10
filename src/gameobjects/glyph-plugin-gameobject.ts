@@ -31,7 +31,8 @@ import { Font } from '../shared';
 export type GlyphPluginGameObjectWebGLRenderer<T extends GlyphPluginGameObject = GlyphPluginGameObject> = (
   renderer: Phaser.Renderer.WebGL.WebGLRenderer,
   src: T,
-  camera: Phaser.Cameras.Scene2D.Camera
+  camera: Phaser.Cameras.Scene2D.Camera,
+  parentMatrix?: Phaser.GameObjects.Components.TransformMatrix
 ) => void;
 
 /**
@@ -42,8 +43,28 @@ export type GlyphPluginGameObjectCanvasRenderer<T extends GlyphPluginGameObject 
   renderer: Phaser.Renderer.Canvas.CanvasRenderer,
   src: T,
   camera: Phaser.Cameras.Scene2D.Camera,
-  parentMatrix: Phaser.GameObjects.Components.TransformMatrix
+  parentMatrix?: Phaser.GameObjects.Components.TransformMatrix
 ) => void;
+
+/**
+ * Glyph plugin game object configuration.
+ */
+export interface GlyphPluginGameObjectConfig extends Phaser.Types.GameObjects.GameObjectConfig {
+  /**
+   * Font.
+   */
+  font?: Font;
+
+  /**
+   * Force square ratio?
+   */
+  forceSquareRatio?: boolean;
+
+  /**
+   * Glyph plugin key.
+   */
+  pluginKey?: string;
+}
 
 /**
  * Base game object with glyph plugin functionality.
@@ -139,7 +160,7 @@ export class GlyphPluginGameObject extends CustomGameObject(
   }
 
   /**
-   * Get glyph plugin.
+   * Set glyph plugin.
    * @see {@link GlyphPluginGameObject.setGlyphPlugin}
    */
   set glyphPlugin(value: GlyphPlugin) {

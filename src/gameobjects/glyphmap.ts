@@ -22,6 +22,7 @@ import { convertHexStringToBuffer, GlyphLike } from '../shared';
 
 import type {
   GlyphPluginGameObjectCanvasRenderer,
+  GlyphPluginGameObjectConfig,
   GlyphPluginGameObjectWebGLRenderer
 } from './glyph-plugin-gameobject';
 import { GlyphPluginGameObject } from './glyph-plugin-gameobject';
@@ -41,7 +42,7 @@ export type GlyphmapCreator = (config?: GlyphmapConfig, addToScene?: boolean) =>
 /**
  * Glyphmap creator configuration.
  */
-export interface GlyphmapConfig extends Phaser.Types.GameObjects.GameObjectConfig {
+export interface GlyphmapConfig extends GlyphPluginGameObjectConfig {
   /**
    * Width in glyph cells.
    */
@@ -51,21 +52,6 @@ export interface GlyphmapConfig extends Phaser.Types.GameObjects.GameObjectConfi
    * Height in glyph cells.
    */
   height?: number;
-
-  /**
-   * Font.
-   */
-  font?: Font;
-
-  /**
-   * Force square ratio?
-   */
-  forceSquareRatio?: boolean;
-
-  /**
-   * Glyph plugin key.
-   */
-  pluginKey?: string;
 }
 
 /**
@@ -370,7 +356,7 @@ if (typeof CANVAS_RENDERER) {
 }
 
 /**
- * Displays glyph data as a grid.
+ * Glyphmap Game Object. Displays glyph data as a grid.
  */
 export class Glyphmap extends ComputedSize(class extends GlyphPluginGameObject {}) {
   /**

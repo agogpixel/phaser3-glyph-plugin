@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+-   Refactor to using an internal base glyph plugin game object class.
+-   Glyph game object. Essentially an Image Game Object with glyph data setter/getter and on the fly texture updates.
+
 ## [0.3.0] - 2022-01-9
 
 ### Added

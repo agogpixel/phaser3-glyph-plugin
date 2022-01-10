@@ -1,3 +1,4 @@
+import { Glyph } from './gameobjects/glyph';
 import { Glyphmap } from './gameobjects/glyphmap';
 import { GlyphPlugin, GlyphPluginEvent } from './plugin';
 import type { GlyphLike } from './shared';
@@ -450,6 +451,67 @@ describe('GlyphPlugin', () => {
         ([p, c, a]) =>
           scene[p] instanceof GlyphPlugin && scene[p].measurementCh === c && scene[p].advancedTextMetrics === a
       );
+
+      const expected = true;
+
+      expect(actual).toEqual(expected);
+    });
+
+    it('maps a glyph factory to a scene', () => {
+      const input = scene.add.glyph;
+      const actual = typeof input;
+      const expected = 'function';
+
+      expect(actual).toEqual(expected);
+    });
+
+    it('adds a glyph to a scene via its factory', () => {
+      const input = [] as const;
+
+      const actual = (() => {
+        const glyph = scene.add.glyph(...input);
+        const result = scene.children.exists(glyph);
+        glyph.destroy();
+        return result;
+      })();
+
+      const expected = true;
+
+      expect(actual).toEqual(expected);
+    });
+
+    it('maps a glyph creator to a scene', () => {
+      const input = scene.make.glyph;
+      const actual = typeof input;
+      const expected = 'function';
+
+      expect(actual).toEqual(expected);
+    });
+
+    it('makes a glyph via creator mapped to scene', () => {
+      const input = [{}, false] as const;
+
+      const actual = (() => {
+        const glyph = scene.make.glyph(...input);
+        const result = !scene.children.exists(glyph) && glyph instanceof Glyph;
+        glyph.destroy();
+        return result;
+      })();
+
+      const expected = true;
+
+      expect(actual).toEqual(expected);
+    });
+
+    it('adds a glyph to a scene via its creator', () => {
+      const input = [] as const;
+
+      const actual = (() => {
+        const glyph = scene.make.glyph(...input);
+        const result = scene.children.exists(glyph);
+        glyph.destroy();
+        return result;
+      })();
 
       const expected = true;
 
