@@ -604,8 +604,10 @@ export class Glyphmap extends ComputedSize(class extends GlyphPluginGameObject {
       return this;
     }
 
+    this.erase(x, y);
+
     if (!glyphs.length) {
-      return this.erase(x, y);
+      return this;
     }
 
     const key = Glyphmap.getKey(x, y);

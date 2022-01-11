@@ -1,3 +1,5 @@
+import type { Glyph } from '../../src';
+
 import { demoHandlerFactory, getParams } from '../shared';
 
 export default demoHandlerFactory(async (config) => {
@@ -9,9 +11,26 @@ export default demoHandlerFactory(async (config) => {
 
   class Scene extends api.GlyphPlugin.GlyphScene('glyph', class extends Phaser.Scene {}) {
     create() {
-      const glyph = this.add.glyph(0, 0, ['#', '#EEEEEEFE', '#4444'], undefined, forceSquareRatio);
+      const font = new api.Font(36, 'DejaVu Sans Mono, monospace', 'bolder');
 
-      this.cameras.main.centerOn(glyph.getCenter().x, glyph.getCenter().y);
+      const group = this.add.group({
+        classType: api.Glyph,
+        maxSize: 16,
+        createCallback: (g: Glyph) => {
+          g.setForceSquareRatio(forceSquareRatio).setFont(font).glyph = [
+            Phaser.Math.RND.integerInRange(32, 126),
+            Phaser.Display.Color.RandomRGB(),
+            Phaser.Display.Color.RandomRGB()
+          ];
+        }
+      });
+
+      for (let i = 0; i < 16; ++i) {
+        group
+          .get(Phaser.Math.RND.integerInRange(20, 650), Phaser.Math.RND.integerInRange(20, 650))
+          .setActive(true)
+          .setVisible(true);
+      }
     }
   }
 

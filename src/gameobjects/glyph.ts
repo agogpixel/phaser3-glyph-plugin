@@ -106,6 +106,12 @@ if (typeof CANVAS_RENDERER) {
 }
 
 /**
+ * Default glyphlike data.
+ * @internal
+ */
+const defaultGlyphLike = [' ', '#0000'] as GlyphLike;
+
+/**
  * Glyph Game Object.
  */
 export class Glyph extends Mask(Size(TextureCrop(Tint(class extends GlyphPluginGameObject {})))) {
@@ -187,7 +193,7 @@ export class Glyph extends Mask(Size(TextureCrop(Tint(class extends GlyphPluginG
     scene: Phaser.Scene,
     x = 0,
     y = 0,
-    glyph: GlyphLike = [' ', '#0000'],
+    glyph: GlyphLike = defaultGlyphLike,
     font?: Font,
     forceSquareRatio?: boolean,
     pluginKey?: string
@@ -196,7 +202,9 @@ export class Glyph extends Mask(Size(TextureCrop(Tint(class extends GlyphPluginG
 
     this._crop = this['resetCropObject']();
 
-    this.setGlyph(glyph).setPosition(x, y).setOriginFromFrame();
+    this.setGlyph(glyph || defaultGlyphLike) // Group create passes null glyph parameter.
+      .setPosition(x, y)
+      .setOriginFromFrame();
   }
 
   /**

@@ -67,6 +67,12 @@ export interface GlyphPluginGameObjectConfig extends Phaser.Types.GameObjects.Ga
 }
 
 /**
+ * Default font.
+ * @internal
+ */
+const defaultFont = new Font(24, 'monospace');
+
+/**
  * Base game object with glyph plugin functionality.
  */
 export class GlyphPluginGameObject extends CustomGameObject(
@@ -186,14 +192,14 @@ export class GlyphPluginGameObject extends CustomGameObject(
     type: string,
     x = 0,
     y = 0,
-    font = new Font(24, 'monospace'),
+    font = defaultFont,
     forceSquareRatio = false,
     pluginKey?: string
   ) {
     super(scene, type);
 
     this.currentGlyphPlugin = GlyphPlugin.findPlugin(scene.game.plugins, pluginKey);
-    this.currentFont = Font.clone(font);
+    this.currentFont = Font.clone(font || defaultFont); // Group create passes null font parameter.
     this.currentForceSquareRatio = forceSquareRatio;
 
     this.setPosition(x, y).addGlyphPluginEventListeners().initPipeline(undefined);

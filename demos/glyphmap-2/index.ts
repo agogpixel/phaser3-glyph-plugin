@@ -46,7 +46,7 @@ export default demoHandlerFactory(async (config) => {
 
       if (this.input.manager.activePointer.isDown) {
         this.map.draw(pointerCellX, pointerCellY, [
-          [Phaser.Math.RND.integerInRange(20, 200), Phaser.Display.Color.RandomRGB(), Phaser.Display.Color.RandomRGB()]
+          [Phaser.Math.RND.integerInRange(32, 126), Phaser.Display.Color.RandomRGB(), Phaser.Display.Color.RandomRGB()]
         ]);
       }
     }

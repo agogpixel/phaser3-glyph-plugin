@@ -26,8 +26,13 @@ const demos = [
   ],
   [
     'glyph-1',
-    'Display a Glyph',
+    'Use Group to create Glyphs',
     async (...args: DemoArgs) => (await import(/* webpackChunkName: "demo-glyph-1" */ './glyph-1')).default(...args)
+  ],
+  [
+    'glyph-2',
+    'Glyph moving in a Glyphmap',
+    async (...args: DemoArgs) => (await import(/* webpackChunkName: "demo-glyph-2" */ './glyph-2')).default(...args)
   ]
 ] as const;
 
