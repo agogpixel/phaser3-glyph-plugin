@@ -6,12 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
--   Refactor to using an internal base glyph plugin game object class. Supports creation via Group.
+## [0.4.0] - 2022-01-10
+
+### Added
+
 -   Glyph game object. Essentially an Image Game Object with glyph data setter/getter and on the fly texture updates. Supports creation via Group.
 -   Additional Glyph game object demos.
+
+### Changed
+
+-   Refactor to using an internal base glyph plugin game object class. Supports creation via Group.
 -   Add missing erase call in Glyphmap draw method (Glyphset count tracking).
 
-## [0.3.0] - 2022-01-9
+## [0.3.0] - 2022-01-09
 
 ### Added
 
@@ -47,6 +54,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 -   Initial release with on the fly glyph texture generation, glyphmap gameobject, regression tests, & a deployed demo.
 
 [unreleased]: https://github.com/agogpixel/phaser3-glyph-plugin/compare/v0.3.0...HEAD
+[0.4.0]: https://github.com/agogpixel/phaser3-glyph-plugin/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/agogpixel/phaser3-glyph-plugin/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/agogpixel/phaser3-glyph-plugin/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/agogpixel/phaser3-glyph-plugin/releases/tag/v0.1.0
