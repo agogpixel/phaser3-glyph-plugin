@@ -14,24 +14,18 @@
 declare const WEBGL_RENDERER: unknown;
 declare const CANVAS_RENDERER: unknown;
 
-import {
-  Alpha,
-  BlendMode,
-  ComputedSize,
-  Depth,
-  Flip,
-  GetBounds,
-  Origin,
-  Pipeline,
-  ScrollFactor,
-  Transform,
-  Visible
-} from '@agogpixel/phaser3-ts-utils/mixins/gameobjects/components';
-import { CustomGameObject } from '@agogpixel/phaser3-ts-utils/mixins/gameobjects/custom-gameobject';
+import { ComputedSize } from '@agogpixel/phaser3-ts-utils/mixins/gameobjects/components/computed-size';
 
-import { GlyphPlugin, GlyphPluginEvent } from '../plugin';
+import { GlyphPlugin } from '../plugin';
+import type { Font } from '../shared';
 import { convertHexStringToBuffer, GlyphLike } from '../shared';
-import { Font } from '../shared';
+
+import type {
+  GlyphPluginGameObjectCanvasRenderer,
+  GlyphPluginGameObjectConfig,
+  GlyphPluginGameObjectWebGLRenderer
+} from './glyph-plugin-gameobject';
+import { GlyphPluginGameObject } from './glyph-plugin-gameobject';
 
 /**
  * Glyphmap factory type.
@@ -48,7 +42,7 @@ export type GlyphmapCreator = (config?: GlyphmapConfig, addToScene?: boolean) =>
 /**
  * Glyphmap creator configuration.
  */
-export interface GlyphmapConfig extends Phaser.Types.GameObjects.GameObjectConfig {
+export interface GlyphmapConfig extends GlyphPluginGameObjectConfig {
   /**
    * Width in glyph cells.
    */
@@ -58,21 +52,6 @@ export interface GlyphmapConfig extends Phaser.Types.GameObjects.GameObjectConfi
    * Height in glyph cells.
    */
   height?: number;
-
-  /**
-   * Font.
-   */
-  font?: Font;
-
-  /**
-   * Force square ratio?
-   */
-  forceSquareRatio?: boolean;
-
-  /**
-   * Glyph plugin key.
-   */
-  pluginKey?: string;
 }
 
 /**
@@ -157,22 +136,13 @@ function getCullBounds(map: Glyphmap, camera: Phaser.Cameras.Scene2D.Camera) {
  * Glyphmap WebGL renderer.
  * @internal
  */
-let renderWebGL: (
-  renderer: Phaser.Renderer.WebGL.WebGLRenderer,
-  src: Glyphmap,
-  camera: Phaser.Cameras.Scene2D.Camera
-) => void = Phaser.Utils.NOOP;
+let renderWebGL: GlyphPluginGameObjectWebGLRenderer<Glyphmap> = Phaser.Utils.NOOP;
 
 /**
  * Glyphmap canvas renderer.
  * @internal
  */
-let renderCanvas: (
-  renderer: Phaser.Renderer.Canvas.CanvasRenderer,
-  src: Glyphmap,
-  camera: Phaser.Cameras.Scene2D.Camera,
-  parentMatrix: Phaser.GameObjects.Components.TransformMatrix
-) => void = Phaser.Utils.NOOP;
+let renderCanvas: GlyphPluginGameObjectCanvasRenderer<Glyphmap> = Phaser.Utils.NOOP;
 
 if (typeof WEBGL_RENDERER) {
   renderWebGL = (renderer, src, camera) => {
@@ -386,21 +356,9 @@ if (typeof CANVAS_RENDERER) {
 }
 
 /**
- * Displays glyph data as a grid.
+ * Glyphmap Game Object. Displays glyph data as a grid.
  */
-export class Glyphmap extends CustomGameObject(
-  Alpha,
-  BlendMode,
-  ComputedSize,
-  Depth,
-  Flip,
-  GetBounds,
-  Origin,
-  Pipeline,
-  ScrollFactor,
-  Transform,
-  Visible
-) {
+export class Glyphmap extends ComputedSize(class extends GlyphPluginGameObject {}) {
   /**
    * Get position key from coordinates.
    * @param x X-coordinate.
@@ -443,13 +401,24 @@ export class Glyphmap extends CustomGameObject(
 
   /**
    * Canvas renderer.
+   * @protected
+   * @internal
    */
-  protected readonly renderCanvas = renderCanvas;
+  readonly renderCanvas = renderCanvas;
 
   /**
    * WebGL renderer.
+   * @protected
+   * @internal
    */
-  protected readonly renderWebGL = renderWebGL;
+  readonly renderWebGL = renderWebGL;
+
+  /**
+   * Refresh glyphmap dimensions & textures.
+   * @returns Glyphmap instance for further chaining.
+   * @protected
+   */
+  readonly refresh = () => this.updateDimensions().updateTextures();
 
   /**
    * Dynamically track & manage glyph textures.
@@ -472,21 +441,6 @@ export class Glyphmap extends CustomGameObject(
   private currentCellWidth: number;
 
   /**
-   * Track current font.
-   */
-  private currentFont: Font;
-
-  /**
-   * Track current glyph plugin.
-   */
-  private currentGlyphPlugin: GlyphPlugin;
-
-  /**
-   * Track current force square ratio flag.
-   */
-  private currentForceSquareRatio: boolean;
-
-  /**
    * Get glyph cell width, in pixels.
    */
   get cellWidth() {
@@ -501,51 +455,6 @@ export class Glyphmap extends CustomGameObject(
   }
 
   /**
-   * Get readonly reference to font.
-   */
-  get font(): Readonly<Font> {
-    return this.currentFont;
-  }
-
-  /**
-   * Set font.
-   * @see {@link Glyphmap.setFont}
-   */
-  set font(value: Font) {
-    this.setFont(value);
-  }
-
-  /**
-   * Get force square ratio.
-   */
-  get forceSquareRatio() {
-    return this.currentForceSquareRatio;
-  }
-
-  /**
-   * Set force square ratio.
-   * @see {@link Glyphmap.setForceSquareRatio}
-   */
-  set forceSquareRatio(value: boolean) {
-    this.setForceSquareRatio(value);
-  }
-
-  /**
-   * Get glyph plugin.
-   */
-  get glyphPlugin() {
-    return this.currentGlyphPlugin;
-  }
-
-  /**
-   * Get glyph plugin.
-   * @see {@link Glyphmap.setGlyphPlugin}
-   */
-  set glyphPlugin(value: GlyphPlugin) {
-    this.setGlyphPlugin(value);
-  }
-
-  /**
    * Instantiate glyphmap game object.
    *
    * @param scene The Scene to which this Game Object belongs.
@@ -554,7 +463,7 @@ export class Glyphmap extends CustomGameObject(
    * @param width (Default: 80) Width in glyph cells.
    * @param height (Default: 25) Height in glyph cells.
    * @param font (Optional) Font to use.
-   * @param forceSquareRatio (Default: false) Force square glyph frames/cells,
+   * @param forceSquareRatio (Optional) Force square glyph frames/cells,
    * using the greater of width or height of the associated glyph plugin's
    * measurement character.
    * @param pluginKey (Optional) Glyph plugin key.
@@ -565,21 +474,16 @@ export class Glyphmap extends CustomGameObject(
     y = 0,
     width = 80,
     height = 25,
-    font = new Font(24, 'monospace'),
-    forceSquareRatio = false,
+    font?: Font,
+    forceSquareRatio?: boolean,
     pluginKey?: string
   ) {
-    super(scene, 'Glyphmap');
-
-    this.currentGlyphPlugin = GlyphPlugin.findPlugin(scene.game.plugins, pluginKey);
+    super(scene, 'Glyphmap', x, y, font, forceSquareRatio, pluginKey);
 
     this.widthInCells = Math.floor(width < 0 ? 0 : width);
     this.heightInCells = Math.floor(height < 0 ? 0 : height);
 
-    this.currentFont = Font.clone(font);
-    this.currentForceSquareRatio = forceSquareRatio;
-
-    this.setOrigin(0).setPosition(x, y).refresh().addGlyphPluginEventListeners().initPipeline(undefined);
+    this.setOrigin(0).refresh();
   }
 
   /**
@@ -684,7 +588,6 @@ export class Glyphmap extends CustomGameObject(
    */
   destroy(fromScene?: boolean) {
     super.destroy(fromScene);
-    this.removeGlyphPluginEventListeners();
   }
 
   /**
@@ -701,8 +604,10 @@ export class Glyphmap extends CustomGameObject(
       return this;
     }
 
+    this.erase(x, y);
+
     if (!glyphs.length) {
-      return this.erase(x, y);
+      return this;
     }
 
     const key = Glyphmap.getKey(x, y);
@@ -738,37 +643,6 @@ export class Glyphmap extends CustomGameObject(
     this.cullPaddingX = paddingX;
     this.cullPaddingY = paddingY;
     return this;
-  }
-
-  /**
-   * Set font. Refreshes glyphmap.
-   * @param font Font.
-   * @returns Glyphmap instance for further chaining.
-   */
-  setFont(font: Font) {
-    this.currentFont = Font.clone(font);
-    return this.refresh();
-  }
-
-  /**
-   * Set force square ratio. Refreshes glyphmap.
-   * @param value (Default: true) Force square ratio flag.
-   * @returns Glyphmap instance for further chaining.
-   */
-  setForceSquareRatio(value = true) {
-    this.currentForceSquareRatio = value;
-    return this.refresh();
-  }
-
-  /**
-   * Set associated glyph plugin & update event listeners. Refreshes glyphmap.
-   * @param plugin Glyph plugin instance.
-   * @returns Glyphmap instance for further chaining.
-   */
-  setGlyphPlugin(plugin: GlyphPlugin) {
-    this.removeGlyphPluginEventListeners();
-    this.currentGlyphPlugin = plugin;
-    return this.refresh().addGlyphPluginEventListeners();
   }
 
   /**
@@ -843,64 +717,6 @@ export class Glyphmap extends CustomGameObject(
   }
 
   /**
-   * Add glyph plugin event listeners.
-   * @returns Glyphmap instance for further chaining.
-   */
-  private addGlyphPluginEventListeners() {
-    if (this.currentGlyphPlugin) {
-      this.currentGlyphPlugin
-        .on(GlyphPluginEvent.Update, this.glyphPluginUpdateEventListener, this)
-        .once(GlyphPluginEvent.Destroy, this.glyphPluginDestroyEventListener, this);
-    }
-
-    return this;
-  }
-
-  /**
-   * When associated glyph plugin is destroyed, glyphmap will attempt to
-   * fallback to first glyph plugin found in the plugins manager, refreshing &
-   * registering new event listeners.
-   * @throws Error if no glyph plugin is found in the plugin manager.
-   */
-  private glyphPluginDestroyEventListener() {
-    if (!this.scene) {
-      return;
-    }
-
-    this.currentGlyphPlugin = GlyphPlugin.findPlugin(this.scene.plugins);
-    this.refresh().addGlyphPluginEventListeners();
-  }
-
-  /**
-   * When associated glyph plugin emits update event, refresh the glyphmap.
-   */
-  private glyphPluginUpdateEventListener() {
-    this.refresh();
-  }
-
-  /**
-   * Refresh glyphmap dimensions & textures.
-   * @returns Glyphmap instance for further chaining.
-   */
-  private refresh() {
-    return this.updateDimensions().updateTextures();
-  }
-
-  /**
-   * Remove glyph plugin event listeners.
-   * @returns Glyphmap instance for further chaining.
-   */
-  private removeGlyphPluginEventListeners() {
-    if (this.currentGlyphPlugin) {
-      this.currentGlyphPlugin
-        .off(GlyphPluginEvent.Update, this.glyphPluginUpdateEventListener, this)
-        .off(GlyphPluginEvent.Destroy, this.glyphPluginDestroyEventListener, this, true);
-    }
-
-    return this;
-  }
-
-  /**
    * Update glyphmap dimensions.
    * @returns Glyphmap instance for further chaining.
    */
@@ -929,7 +745,6 @@ export class Glyphmap extends CustomGameObject(
 
 /**
  * Manages glyphmap textures.
- * @internal
  */
 export class Glyphset {
   /**

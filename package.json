@@ -37,7 +37,7 @@
   },
   "homepage": "https://agogpixel.github.io/phaser3-glyph-plugin/",
   "dependencies": {
-    "@agogpixel/phaser3-ts-utils": "0.2.0-alpha--dev-build-1639454098",
+    "@agogpixel/phaser3-ts-utils": "0.2.0--dev-build-1641771218",
     "color-string": "^1.9.0"
   },
   "peerDependencies": {

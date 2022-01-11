@@ -7,6 +7,8 @@
  * @module
  */
 
+export type { GlyphConfig } from './gameobjects/glyph';
+export { Glyph } from './gameobjects/glyph';
 export type { GlyphmapConfig } from './gameobjects/glyphmap';
 export { Glyphmap } from './gameobjects/glyphmap';
 export type { GlyphPluginInitData } from './plugin';
