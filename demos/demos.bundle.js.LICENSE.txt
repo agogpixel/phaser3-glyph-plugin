@@ -20,7 +20,16 @@ PERFORMANCE OF THIS SOFTWARE.
  */
 
 /**
- * Glyph plugin module.
+ * Glyph game object module.
+ *
+ * @author kidthales <kidthales@agogpixel.com>
+ * @copyright 2021-present AgogPixel
+ * @license {@link https://agogpixel.github.io/phaser3-glyph-plugin/LICENSE|MIT License}
+ * @module
+ */
+
+/**
+ * Glyph plugin game object module.
  *
  * @author kidthales <kidthales@agogpixel.com>
  * @copyright 2021-present AgogPixel
