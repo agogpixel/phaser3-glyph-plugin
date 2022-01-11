@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [0.5.0] - 2022-01-11
+
 ### Changed
 
 -   Relax Phaser peer dependency to `>=3.22.0`.
@@ -57,7 +59,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 -   Initial release with on the fly glyph texture generation, glyphmap gameobject, regression tests, & a deployed demo.
 
-[unreleased]: https://github.com/agogpixel/phaser3-glyph-plugin/compare/v0.3.0...HEAD
+[unreleased]: https://github.com/agogpixel/phaser3-glyph-plugin/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/agogpixel/phaser3-glyph-plugin/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/agogpixel/phaser3-glyph-plugin/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/agogpixel/phaser3-glyph-plugin/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/agogpixel/phaser3-glyph-plugin/compare/v0.1.0...v0.2.0
