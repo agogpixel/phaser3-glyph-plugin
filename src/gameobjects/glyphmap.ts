@@ -16,33 +16,38 @@ declare const CANVAS_RENDERER: unknown;
 
 import { ComputedSize } from '@agogpixel/phaser3-ts-utils/mixins/gameobjects/components/computed-size';
 
-import { GlyphPlugin } from '../plugin';
-import type { Font } from '../shared';
-import { convertHexStringToBuffer, GlyphLike } from '../shared';
+import type { GlyphLike } from '../glyph';
+import { Glyph } from '../glyph';
+import type { GlyphPlugin } from '../plugins';
+import type { Font } from '../utils';
 
 import type {
   GlyphPluginGameObjectCanvasRenderer,
   GlyphPluginGameObjectConfig,
   GlyphPluginGameObjectWebGLRenderer
-} from './glyph-plugin-gameobject';
-import { GlyphPluginGameObject } from './glyph-plugin-gameobject';
+} from './base';
+import { GlyphPluginGameObject } from './base';
+
+////////////////////////////////////////////////////////////////////////////////
+// Factories & Creators
+////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Glyphmap factory type.
+ * Glyphmap game object factory type.
  */
-export type GlyphmapFactory = (
-  ...args: ConstructorParameters<typeof Glyphmap> extends [unknown, ...infer R] ? R : never
-) => Glyphmap;
+export type GlyphmapGameObjectFactory = (
+  ...args: ConstructorParameters<typeof GlyphmapGameObject> extends [unknown, ...infer R] ? R : never
+) => GlyphmapGameObject;
 
 /**
- * Glyphmap creator type.
+ * Glyphmap game object creator type.
  */
-export type GlyphmapCreator = (config?: GlyphmapConfig, addToScene?: boolean) => Glyphmap;
+export type GlyphmapGameObjectCreator = (config?: GlyphmapGameObjectConfig, addToScene?: boolean) => GlyphmapGameObject;
 
 /**
- * Glyphmap creator configuration.
+ * Glyphmap game object creator configuration.
  */
-export interface GlyphmapConfig extends GlyphPluginGameObjectConfig {
+export interface GlyphmapGameObjectConfig extends GlyphPluginGameObjectConfig {
   /**
    * Width in glyph cells.
    */
@@ -55,21 +60,21 @@ export interface GlyphmapConfig extends GlyphPluginGameObjectConfig {
 }
 
 /**
- * Glyphmap factory.
+ * Glyphmap game object factory.
  * @param this Phaser GameObject factory.
  * @param args Glyphmap instantiation arguments.
  * @returns Glyphmap instance.
  * @internal
  */
-export const glyphmapFactory: GlyphmapFactory = function glyphmapFactory(
+export const glyphmapGameObjectFactory: GlyphmapGameObjectFactory = function glyphmapGameObjectFactory(
   this: Phaser.GameObjects.GameObjectFactory,
   ...args
 ) {
-  return this.displayList.add(new Glyphmap(this.scene, ...args)) as Glyphmap;
+  return this.displayList.add(new GlyphmapGameObject(this.scene, ...args)) as GlyphmapGameObject;
 };
 
 /**
- * Glyphmap creator.
+ * Glyphmap game object creator.
  * @param this Phaser GameObject creator.
  * @param config Glyphmap creator configuration.
  * @param addToScene Add this Game Object to the Scene after creating it? If set
@@ -77,12 +82,12 @@ export const glyphmapFactory: GlyphmapFactory = function glyphmapFactory(
  * @returns Glyphmap instance.
  * @internal
  */
-export const glyphmapCreator: GlyphmapCreator = function glyphmapCreator(
+export const glyphmapGameObjectCreator: GlyphmapGameObjectCreator = function glyphmapGameObjectCreator(
   this: Phaser.GameObjects.GameObjectCreator,
-  config: GlyphmapConfig = {},
+  config: GlyphmapGameObjectConfig = {},
   addToScene?: boolean
 ) {
-  const glyphmap = new Glyphmap(
+  const glyphmap = new GlyphmapGameObject(
     this.scene,
     0,
     0,
@@ -102,6 +107,10 @@ export const glyphmapCreator: GlyphmapCreator = function glyphmapCreator(
   return glyphmap;
 };
 
+////////////////////////////////////////////////////////////////////////////////
+// Renderers
+////////////////////////////////////////////////////////////////////////////////
+
 /**
  * Used for cull bounds pass.
  * @internal
@@ -115,7 +124,7 @@ const bounds = new Phaser.Geom.Rectangle();
  * @returns Rectangular bounds of glyphmap that should be rendered.
  * @internal
  */
-function getCullBounds(map: Glyphmap, camera: Phaser.Cameras.Scene2D.Camera) {
+function getCullBounds(map: GlyphmapGameObject, camera: Phaser.Cameras.Scene2D.Camera) {
   if (map.skipCull || map.scrollFactorX !== 1 || map.scrollFactorY !== 1) {
     return bounds.setTo(0, 0, map.widthInCells, map.heightInCells);
   }
@@ -136,13 +145,13 @@ function getCullBounds(map: Glyphmap, camera: Phaser.Cameras.Scene2D.Camera) {
  * Glyphmap WebGL renderer.
  * @internal
  */
-let renderWebGL: GlyphPluginGameObjectWebGLRenderer<Glyphmap> = Phaser.Utils.NOOP;
+let renderWebGL: GlyphPluginGameObjectWebGLRenderer<GlyphmapGameObject> = Phaser.Utils.NOOP;
 
 /**
  * Glyphmap canvas renderer.
  * @internal
  */
-let renderCanvas: GlyphPluginGameObjectCanvasRenderer<Glyphmap> = Phaser.Utils.NOOP;
+let renderCanvas: GlyphPluginGameObjectCanvasRenderer<GlyphmapGameObject> = Phaser.Utils.NOOP;
 
 if (typeof WEBGL_RENDERER) {
   renderWebGL = (renderer, src, camera) => {
@@ -183,7 +192,7 @@ if (typeof WEBGL_RENDERER) {
 
     const mapData = src['mapData'];
     const glyphset = src['glyphset'];
-    const getKey = Glyphmap['getKey'];
+    const getKey = GlyphmapGameObject['getKey'];
 
     renderer.pipelines.preBatch(src);
 
@@ -315,7 +324,7 @@ if (typeof CANVAS_RENDERER) {
 
     const mapData = src['mapData'];
     const glyphset = src['glyphset'];
-    const getKey = Glyphmap['getKey'];
+    const getKey = GlyphmapGameObject['getKey'];
 
     for (let y = cullBoundsY; y < cullBoundsEndY; ++y) {
       for (let x = cullBoundsX; x < cullBoundsEndX; ++x) {
@@ -355,10 +364,14 @@ if (typeof CANVAS_RENDERER) {
   };
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// GlyphmapGameObject Definition
+////////////////////////////////////////////////////////////////////////////////
+
 /**
- * Glyphmap Game Object. Displays glyph data as a grid.
+ * Glyphmap game object.
  */
-export class Glyphmap extends ComputedSize(class extends GlyphPluginGameObject {}) {
+export class GlyphmapGameObject extends ComputedSize(class extends GlyphPluginGameObject {}) {
   /**
    * Get position key from coordinates.
    * @param x X-coordinate.
@@ -412,13 +425,6 @@ export class Glyphmap extends ComputedSize(class extends GlyphPluginGameObject {
    * @internal
    */
   readonly renderWebGL = renderWebGL;
-
-  /**
-   * Refresh glyphmap dimensions & textures.
-   * @returns Glyphmap instance for further chaining.
-   * @protected
-   */
-  readonly refresh = () => this.updateDimensions().updateTextures();
 
   /**
    * Dynamically track & manage glyph textures.
@@ -569,7 +575,7 @@ export class Glyphmap extends ComputedSize(class extends GlyphPluginGameObject {
    * @returns Glyphmap instance for further chaining.
    */
   erase(x: number, y: number) {
-    const key = Glyphmap.getKey(x, y);
+    const key = GlyphmapGameObject.getKey(x, y);
 
     if (!this.mapData.has(key)) {
       return this;
@@ -610,19 +616,28 @@ export class Glyphmap extends ComputedSize(class extends GlyphPluginGameObject {
       return this;
     }
 
-    const key = Glyphmap.getKey(x, y);
+    const key = GlyphmapGameObject.getKey(x, y);
 
-    const glyphPlugin = this.glyphPlugin;
+    const glyphPlugin = this._currentGlyphPlugin;
     const glyphset = this.glyphset;
-    const font = this.currentFont;
-    const forceSquareRatio = this.currentForceSquareRatio;
+    const font = this._currentFont;
+    const forceSquareRatio = this._currentForceSquareRatio;
 
     this.mapData.set(
       key,
-      glyphs.map((glyph) => glyphset.add(glyphPlugin.getTexture([glyph], font, forceSquareRatio)))
+      glyphs.map((glyph) => glyphset.add(glyphPlugin.getTexture(glyph, font, forceSquareRatio)))
     );
 
     return this;
+  }
+
+  /**
+   * Refresh glyphmap game object. Updates textures & size.
+   * @returns Reference to glyphmap game object for further chaining.
+   */
+  refresh() {
+    super.refresh();
+    return this.updateDimensions().updateTextures();
   }
 
   /**
@@ -721,10 +736,10 @@ export class Glyphmap extends ComputedSize(class extends GlyphPluginGameObject {
    * @returns Glyphmap instance for further chaining.
    */
   private updateDimensions() {
-    const [width, height] = this.currentGlyphPlugin.getFrameDimensions(
-      this.currentGlyphPlugin.measurementCh,
+    const [width, height] = this._currentGlyphPlugin.getFrameDimensions(
+      this._currentGlyphPlugin.measurementCodePoint,
       this.font,
-      this.currentForceSquareRatio
+      this._currentForceSquareRatio
     );
 
     this.currentCellWidth = width || 1;
@@ -738,10 +753,14 @@ export class Glyphmap extends ComputedSize(class extends GlyphPluginGameObject {
    * @returns Glyphmap instance for further chaining.
    */
   private updateTextures() {
-    this.glyphset.update(this.glyphPlugin, this.currentFont, this.currentForceSquareRatio);
+    this.glyphset.update(this.glyphPlugin, this._currentFont, this._currentForceSquareRatio);
     return this;
   }
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Glyphset Definition
+////////////////////////////////////////////////////////////////////////////////
 
 /**
  * Manages glyphmap textures.
@@ -873,14 +892,11 @@ export class Glyphset {
   update(glyphPlugin: GlyphPlugin, font: Font, forceSquareRatio: boolean) {
     const textures = this.textures;
 
-    const getTextureFromBuffer = glyphPlugin['getTextureFromBuffer'].bind(
-      glyphPlugin
-    ) as typeof glyphPlugin['getTextureFromBuffer'];
-
     for (const [key, texture] of textures) {
+      const glyph = Glyph.fromTexture(texture);
       textures.set(
         key,
-        getTextureFromBuffer(convertHexStringToBuffer(Glyphset.readMinimalGlyphString(texture)), font, forceSquareRatio)
+        glyphPlugin.getTexture([glyph.codePoint, glyph.foregroundColor, glyph.backgroundColor], font, forceSquareRatio)
       );
     }
 

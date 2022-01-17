@@ -1,5 +1,5 @@
 /**
- * Glyph plugin game object module.
+ * Base GameObject module.
  *
  * @author kidthales <kidthales@agogpixel.com>
  * @copyright 2021-present AgogPixel
@@ -21,8 +21,10 @@ import {
 } from '@agogpixel/phaser3-ts-utils/mixins/gameobjects/components';
 import { CustomGameObject } from '@agogpixel/phaser3-ts-utils/mixins/gameobjects/custom-gameobject';
 
-import { GlyphPlugin, GlyphPluginEvent } from '../plugin';
-import { Font } from '../shared';
+import type { GlyphPluginUpdateEventData } from '../events';
+import { GlyphPluginEvent } from '../events';
+import type { GlyphPlugin } from '../plugins';
+import { Font } from '../utils';
 
 /**
  * Glyph plugin game object WebGL renderer type.
@@ -67,10 +69,36 @@ export interface GlyphPluginGameObjectConfig extends Phaser.Types.GameObjects.Ga
 }
 
 /**
+ * Find glyph plugin in plugin manager.
+ * @param pluginManager Plugin manager instance.
+ * @param key (Optional) Plugin key to search for.
+ * @returns Returns glyph plugin as specified by key, or fallback to first
+ * glyph plugin found.
+ * @throws Error if no glyph plugin instance exists in the plugin manager.
+ */
+export function findGlyphPlugin(pluginManager: Phaser.Plugins.PluginManager, key?: string) {
+  let plugin: GlyphPlugin;
+
+  if (typeof key === 'string') {
+    plugin = pluginManager.get(key, true) as GlyphPlugin;
+  }
+
+  if (!plugin) {
+    plugin = pluginManager.plugins.find((p) => p.plugin['isGlyphPlugin'])?.plugin as unknown as GlyphPlugin;
+  }
+
+  if (!plugin) {
+    throw new Error('GlyphPlugin instance not found in Phaser pluginManager. Have you started the plugin?');
+  }
+
+  return plugin;
+}
+
+/**
  * Default font.
  * @internal
  */
-const defaultFont = new Font(24, 'monospace');
+export const defaultFont = new Font(24, '"Lucida Console", Courier, monospace');
 
 /**
  * Base game object with glyph plugin functionality.
@@ -106,33 +134,25 @@ export class GlyphPluginGameObject extends CustomGameObject(
    * Track current font.
    * @protected
    */
-  currentFont: Font;
+  _currentFont: Font;
 
   /**
    * Track current force square ratio flag.
    * @protected
    */
-  currentForceSquareRatio: boolean;
+  _currentForceSquareRatio: boolean;
 
   /**
    * Track current glyph plugin.
    * @protected
    */
-  currentGlyphPlugin: GlyphPlugin;
-
-  /**
-   * Refresh glyph plugin game object.
-   * @returns Glyph plugin game object instance for further chaining.
-   * @protected
-   * @abstract
-   */
-  readonly refresh: () => this;
+  _currentGlyphPlugin: GlyphPlugin;
 
   /**
    * Get readonly reference to font.
    */
   get font(): Readonly<Font> {
-    return this.currentFont;
+    return this._currentFont;
   }
 
   /**
@@ -147,7 +167,7 @@ export class GlyphPluginGameObject extends CustomGameObject(
    * Get force square ratio.
    */
   get forceSquareRatio() {
-    return this.currentForceSquareRatio;
+    return this._currentForceSquareRatio;
   }
 
   /**
@@ -162,7 +182,7 @@ export class GlyphPluginGameObject extends CustomGameObject(
    * Get glyph plugin.
    */
   get glyphPlugin() {
-    return this.currentGlyphPlugin;
+    return this._currentGlyphPlugin;
   }
 
   /**
@@ -181,8 +201,9 @@ export class GlyphPluginGameObject extends CustomGameObject(
    * populate.
    * @param x (Default: 0) World X-coordinate.
    * @param y (Default: 0) World Y-coordinate.
-   * @param font (Optional) Font to use.
-   * @param forceSquareRatio (Default: true) Force square glyph frames/cells,
+   * @param font (Default: 'normal normal normal 24px "Lucida Console", Courier, monospace')
+   * Font to use.
+   * @param forceSquareRatio (Default: false) Force square glyph frames/cells,
    * using the greater of width or height of the associated glyph plugin's
    * measurement character.
    * @param pluginKey (Optional) Glyph plugin key.
@@ -198,11 +219,11 @@ export class GlyphPluginGameObject extends CustomGameObject(
   ) {
     super(scene, type);
 
-    this.currentGlyphPlugin = GlyphPlugin.findPlugin(scene.game.plugins, pluginKey);
-    this.currentFont = Font.clone(font || defaultFont); // Group create passes null font parameter.
-    this.currentForceSquareRatio = forceSquareRatio;
+    this._currentGlyphPlugin = findGlyphPlugin(scene.game.plugins, pluginKey);
+    this._currentFont = Font.clone(font || defaultFont); // Handle null.
+    this._currentForceSquareRatio = forceSquareRatio;
 
-    this.setPosition(x, y).addGlyphPluginEventListeners().initPipeline(undefined);
+    this.setPosition(x, y)._addGlyphPluginEventListeners().initPipeline(undefined);
   }
 
   /**
@@ -212,7 +233,15 @@ export class GlyphPluginGameObject extends CustomGameObject(
    */
   destroy(fromScene?: boolean) {
     super.destroy(fromScene);
-    this.removeGlyphPluginEventListeners();
+    this._removeGlyphPluginEventListeners();
+  }
+
+  /**
+   * Refresh glyph plugin game object.
+   * @returns Glyph plugin game object instance for further chaining.
+   */
+  refresh() {
+    return this;
   }
 
   /**
@@ -221,7 +250,7 @@ export class GlyphPluginGameObject extends CustomGameObject(
    * @returns Glyph plugin game object instance for further chaining.
    */
   setFont(font: Font) {
-    this.currentFont = Font.clone(font);
+    this._currentFont = Font.clone(font);
     return this.refresh();
   }
 
@@ -231,7 +260,7 @@ export class GlyphPluginGameObject extends CustomGameObject(
    * @returns Glyph plugin game object instance for further chaining.
    */
   setForceSquareRatio(value = true) {
-    this.currentForceSquareRatio = value;
+    this._currentForceSquareRatio = value;
     return this.refresh();
   }
 
@@ -242,9 +271,9 @@ export class GlyphPluginGameObject extends CustomGameObject(
    * @returns Glyph plugin game object instance for further chaining.
    */
   setGlyphPlugin(plugin: GlyphPlugin) {
-    this.removeGlyphPluginEventListeners();
-    this.currentGlyphPlugin = plugin;
-    return this.refresh().addGlyphPluginEventListeners();
+    this._removeGlyphPluginEventListeners();
+    this._currentGlyphPlugin = plugin;
+    return this.refresh()._addGlyphPluginEventListeners();
   }
 
   /**
@@ -252,11 +281,11 @@ export class GlyphPluginGameObject extends CustomGameObject(
    * @returns Glyph plugin game object instance for further chaining.
    * @private
    */
-  addGlyphPluginEventListeners() {
-    if (this.currentGlyphPlugin) {
-      this.currentGlyphPlugin
-        .on(GlyphPluginEvent.Update, this.glyphPluginUpdateEventListener, this)
-        .once(GlyphPluginEvent.Destroy, this.glyphPluginDestroyEventListener, this);
+  _addGlyphPluginEventListeners() {
+    if (this._currentGlyphPlugin) {
+      this._currentGlyphPlugin
+        .on(GlyphPluginEvent.Update, this._glyphPluginUpdateEventListener, this)
+        .once(GlyphPluginEvent.Destroy, this._glyphPluginDestroyEventListener, this);
     }
 
     return this;
@@ -269,13 +298,13 @@ export class GlyphPluginGameObject extends CustomGameObject(
    * @throws Error if no glyph plugin is found in the plugin manager.
    * @private
    */
-  glyphPluginDestroyEventListener() {
+  _glyphPluginDestroyEventListener() {
     if (!this.scene) {
       return;
     }
 
-    this.currentGlyphPlugin = GlyphPlugin.findPlugin(this.scene.plugins);
-    this.refresh().addGlyphPluginEventListeners();
+    this._currentGlyphPlugin = findGlyphPlugin(this.scene.plugins);
+    this.refresh()._addGlyphPluginEventListeners();
   }
 
   /**
@@ -283,8 +312,10 @@ export class GlyphPluginGameObject extends CustomGameObject(
    * game object.
    * @private
    */
-  glyphPluginUpdateEventListener() {
-    this.refresh();
+  _glyphPluginUpdateEventListener(data: GlyphPluginUpdateEventData) {
+    if (data.advancedTextMetrics !== undefined || data.measurementCodePoint !== undefined) {
+      this.refresh();
+    }
   }
 
   /**
@@ -292,11 +323,11 @@ export class GlyphPluginGameObject extends CustomGameObject(
    * @returns Glyph plugin game object instance for further chaining.
    * @private
    */
-  removeGlyphPluginEventListeners() {
-    if (this.currentGlyphPlugin) {
-      this.currentGlyphPlugin
-        .off(GlyphPluginEvent.Update, this.glyphPluginUpdateEventListener, this)
-        .off(GlyphPluginEvent.Destroy, this.glyphPluginDestroyEventListener, this, true);
+  _removeGlyphPluginEventListeners() {
+    if (this._currentGlyphPlugin) {
+      this._currentGlyphPlugin
+        .off(GlyphPluginEvent.Update, this._glyphPluginUpdateEventListener, this)
+        .off(GlyphPluginEvent.Destroy, this._glyphPluginDestroyEventListener, this, true);
     }
 
     return this;

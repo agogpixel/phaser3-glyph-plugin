@@ -1,4 +1,4 @@
-import type { Glyph } from '../../src';
+import type { GlyphGameObject } from '../../src';
 
 import { demoHandlerFactory, getParams } from '../shared';
 
@@ -14,9 +14,9 @@ export default demoHandlerFactory(async (config) => {
       const font = new api.Font(36, 'DejaVu Sans Mono, monospace', 'bolder');
 
       const group = this.add.group({
-        classType: api.Glyph,
+        classType: api.GlyphGameObject,
         maxSize: 16,
-        createCallback: (g: Glyph) => {
+        createCallback: (g: GlyphGameObject) => {
           g.setForceSquareRatio(forceSquareRatio).setFont(font).glyph = [
             Phaser.Math.RND.integerInRange(32, 126),
             Phaser.Display.Color.RandomRGB(),

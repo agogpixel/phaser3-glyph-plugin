@@ -3,9 +3,19 @@ import './styles/styles.scss';
 import type { Renderer } from './shared';
 import { getParams, renderers } from './shared';
 
-type DemoArgs = [Renderer, string, boolean];
+type DemoArgs = [Renderer, number, boolean];
 
 const demos = [
+  [
+    'glyph-1',
+    'Use Group to create Glyphs',
+    async (...args: DemoArgs) => (await import(/* webpackChunkName: "demo-glyph-1" */ './glyph-1')).default(...args)
+  ],
+  [
+    'glyph-2',
+    'Glyph moving in a Glyphmap',
+    async (...args: DemoArgs) => (await import(/* webpackChunkName: "demo-glyph-2" */ './glyph-2')).default(...args)
+  ],
   [
     'glyphmap-1',
     "Display a square 'room' with Glyphmap",
@@ -23,16 +33,6 @@ const demos = [
     'Dynamic font with Glyphmap',
     async (...args: DemoArgs) =>
       (await import(/* webpackChunkName: "demo-glyphmap-3" */ './glyphmap-3')).default(...args)
-  ],
-  [
-    'glyph-1',
-    'Use Group to create Glyphs',
-    async (...args: DemoArgs) => (await import(/* webpackChunkName: "demo-glyph-1" */ './glyph-1')).default(...args)
-  ],
-  [
-    'glyph-2',
-    'Glyph moving in a Glyphmap',
-    async (...args: DemoArgs) => (await import(/* webpackChunkName: "demo-glyph-2" */ './glyph-2')).default(...args)
   ]
 ] as const;
 
@@ -51,9 +51,9 @@ async function run() {
   }
 
   const renderer = (renderers.includes(params.renderer as Renderer) ? params.renderer : 'auto') as Renderer;
-  const measure = typeof params.measure === 'string' && params.measure.length ? params.measure.charAt(0) : 'W';
+  const measure = typeof params.measure === 'string' && params.measure.length ? params.measure.codePointAt(0) : 0x57;
   const advanced = params.advanced === 'true' ? true : false;
-
+  console.log(String.fromCodePoint(measure), measure);
   await demo[2](renderer, measure, advanced);
 }
 

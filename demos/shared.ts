@@ -5,7 +5,7 @@ export type Renderer = typeof renderers[number];
 type Demo = (config: Phaser.Types.Core.GameConfig) => void;
 
 export function demoHandlerFactory(demo: Demo) {
-  return async function demoHandler(renderer: Renderer, measure: string, advanced: boolean) {
+  return async function demoHandler(renderer: Renderer, measure: number, advanced: boolean) {
     const { phaserFactory } = await import(/* webpackChunkName: "phaser" */ './phaser');
     await phaserFactory();
 
@@ -33,7 +33,7 @@ export function demoHandlerFactory(demo: Demo) {
             plugin: GlyphPlugin,
             mapping: 'glyph',
             start: true,
-            data: { advancedTextMetrics: advanced, measurementCh: measure }
+            data: { advancedTextMetrics: advanced, measurementCodePoint: measure }
           }
         ]
       },

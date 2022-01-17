@@ -1,5 +1,5 @@
 import { demoHandlerFactory, getParams } from '../shared';
-import type { Glyphmap } from '../../src';
+import type { GlyphmapGameObject } from '../../src';
 
 export default demoHandlerFactory(async (config) => {
   const api = await import(/* webpackChunkName: "phaser-glyph-plugin" */ '../../src');
@@ -9,7 +9,7 @@ export default demoHandlerFactory(async (config) => {
   const forceSquareRatio = params.square === 'true' ? true : false;
 
   class Scene extends api.GlyphPlugin.GlyphScene('glyph', class extends Phaser.Scene {}) {
-    map: Glyphmap;
+    map: GlyphmapGameObject;
 
     marker: Phaser.GameObjects.Graphics;
 

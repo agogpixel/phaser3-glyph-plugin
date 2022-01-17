@@ -7,11 +7,19 @@
  * @module
  */
 
-export type { GlyphConfig } from './gameobjects/glyph';
-export { Glyph } from './gameobjects/glyph';
-export type { GlyphmapConfig } from './gameobjects/glyphmap';
-export { Glyphmap } from './gameobjects/glyphmap';
-export type { GlyphPluginInitData } from './plugin';
-export { GlyphPlugin, GlyphPluginEvent } from './plugin';
-export type { CharLike, ColorLike, GlyphLike } from './shared';
-export { Font } from './shared';
+export type {
+  GlyphPluginDestroyEventListener,
+  GlyphPluginUpdateEventData,
+  GlyphPluginUpdateEventListener
+} from './events';
+export { GlyphPluginEvent } from './events';
+
+export type { GlyphGameObjectConfig, GlyphmapGameObjectConfig } from './gameobjects';
+export { GlyphGameObject, GlyphmapGameObject } from './gameobjects';
+
+export type { GlyphPluginInitData } from './plugins';
+export { GlyphPlugin } from './plugins';
+
+export type { CharLike, ColorLike, GlyphLike, GlyphLikeObject, GlyphLikeTuple } from './glyph';
+
+export { Font } from './utils';
