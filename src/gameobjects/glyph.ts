@@ -1,5 +1,5 @@
 /**
- * Glyph game object module.
+ * Glyph GameObject module.
  *
  * @author kidthales <kidthales@agogpixel.com>
  * @copyright 2021-present AgogPixel
@@ -28,32 +28,32 @@ import { GlyphPluginGameObject } from './base';
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Glyph GameObject factory type.
+ * {@link GlyphGameObject} factory type.
  */
 export type GlyphGameObjectFactory = (
   ...args: ConstructorParameters<typeof GlyphGameObject> extends [unknown, ...infer R] ? R : never
 ) => GlyphGameObject;
 
 /**
- * Glyph GameObject creator type.
+ * {@link GlyphGameObject} creator type.
  */
 export type GlyphGameObjectCreator = (config?: GlyphGameObjectConfig, addToScene?: boolean) => GlyphGameObject;
 
 /**
- * Glyph creator configuration.
+ * {@link GlyphGameObject} creator configuration.
  */
 export interface GlyphGameObjectConfig extends GlyphPluginGameObjectConfig {
   /**
-   * Glyphlike data.
+   * {@link GlyphLike} data.
    */
   glyph?: GlyphLike;
 }
 
 /**
- * Glyph game object factory.
- * @param this Phaser GameObject factory.
- * @param args Glyph game object instantiation arguments.
- * @returns Glyph game object instance.
+ * {@link GlyphGameObject} factory.
+ * @param this [Phaser.GameObjects.GameObjectFactory](https://photonstorm.github.io/phaser3-docs/Phaser.GameObjects.GameObjectFactory.html).
+ * @param args {@link GlyphGameObject} instantiation arguments.
+ * @returns A {@link GlyphGameObject} instance.
  * @internal
  */
 export const glyphGameObjectFactory: GlyphGameObjectFactory = function glyphGameObjectFactory(
@@ -64,12 +64,13 @@ export const glyphGameObjectFactory: GlyphGameObjectFactory = function glyphGame
 };
 
 /**
- * Glyph game object creator.
- * @param this Phaser GameObject creator.
- * @param config Glyph game object creator configuration.
- * @param addToScene Add this Game Object to the Scene after creating it? If set
- * this argument overrides the `add` property in the config object.
- * @returns Glyph game object instance.
+ * {@link GlyphGameObject} creator.
+ * @param this [Phaser.GameObjects.GameObjectCreator](https://photonstorm.github.io/phaser3-docs/Phaser.GameObjects.GameObjectCreator.html).
+ * @param config {@link GlyphGameObjectConfig}.
+ * @param addToScene Add this {@link GlyphGameObject} to the [Phaser.Scene](https://photonstorm.github.io/phaser3-docs/Phaser.Scene.html)
+ * after creating it? If set this argument overrides the `add` property in the
+ * {@link GlyphGameObjectConfig}.
+ * @returns A {@link GlyphGameObject} instance.
  * @internal
  */
 export const glyphGameObjectCreator: GlyphGameObjectCreator = function glyphGameObjectCreator(
@@ -101,13 +102,13 @@ export const glyphGameObjectCreator: GlyphGameObjectCreator = function glyphGame
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Glyphmap WebGL renderer.
+ * {@link GlyphGameObject} WebGL renderer.
  * @internal
  */
 let renderWebGL: GlyphPluginGameObjectWebGLRenderer<GlyphGameObject> = Phaser.Utils.NOOP;
 
 /**
- * Glyphmap canvas renderer.
+ * {@link GlyphGameObject} canvas renderer.
  * @internal
  */
 let renderCanvas: GlyphPluginGameObjectCanvasRenderer<GlyphGameObject> = Phaser.Utils.NOOP;
@@ -130,7 +131,7 @@ if (typeof CANVAS_RENDERER) {
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Default glyphlike data.
+ * Default {@link GlyphLike} data.
  * @internal
  */
 export const defaultGlyphLike = [' ', '#0000'] as GlyphLike;
@@ -175,14 +176,14 @@ export class GlyphGameObject extends Mask(Size(TextureCrop(Tint(class extends Gl
   }
 
   /**
-   * Get code point.
+   * Get {@link CodePoint}.
    */
   get codePoint(): CodePoint {
     return this.getGlyphFromTexture().codePoint;
   }
 
   /**
-   * Set code point.
+   * Set {@link CodePoint}.
    * @see {@link GlyphGameObject.setCodePoint}
    */
   set codePoint(value: CharLike) {
@@ -205,8 +206,8 @@ export class GlyphGameObject extends Mask(Size(TextureCrop(Tint(class extends Gl
   }
 
   /**
-   * Get GlyphLike tuple corresponding to current glyph data. Color components
-   * are in CSS functional color string notation.
+   * Get {@link GlyphLikeTuple} corresponding to current glyph data. Color
+   * components are in CSS functional color string notation.
    */
   get glyph(): GlyphLikeTuple {
     const glyph = this.getGlyphFromTexture();
@@ -222,17 +223,16 @@ export class GlyphGameObject extends Mask(Size(TextureCrop(Tint(class extends Gl
   }
 
   /**
-   * Instantiate glyph game object.
-   * @param scene The Scene to which this Game Object belongs.
+   * Instantiate {@link GlyphGameObject}.
+   * @param scene The [Phaser.Scene](https://photonstorm.github.io/phaser3-docs/Phaser.Scene.html)
+   * to which this {@link GlyphGameObject} belongs.
    * @param x (Default: 0) World X-coordinate.
    * @param y (Default: 0) World Y-coordinate.
-   * @param glyph (Default: [' ', '#0000']) Glyphlike data.
+   * @param glyph (Default: [' ', '#0000']) {@link GlyphLike} data.
    * @param font (Default: 'normal normal normal 24px "Lucida Console", Courier, monospace')
-   * Font to use.
-   * @param forceSquareRatio (Optional) Force square glyph frames/cells,
-   * using the greater of width or height of the associated glyph plugin's
-   * measurement character.
-   * @param pluginKey (Optional) Glyph plugin key.
+   * {@link Font} to use.
+   * @param forceSquareRatio (Default: false) Force square a square frame.
+   * @param pluginKey (Optional) {@link GlyphPlugin} key.
    */
   constructor(
     scene: Phaser.Scene,
@@ -253,8 +253,17 @@ export class GlyphGameObject extends Mask(Size(TextureCrop(Tint(class extends Gl
   }
 
   /**
-   * Refresh glyph game object. Updates texture & size.
-   * @returns Reference to glyph game object for further chaining.
+   * Destroy {@link GlyphGameObject} & resources.
+   * @param fromScene (Default: false) Destroyed by the
+   * [Phaser.Scene](https://photonstorm.github.io/phaser3-docs/Phaser.Scene.html)?
+   */
+  destroy(fromScene?: boolean) {
+    super.destroy(fromScene);
+  }
+
+  /**
+   * Refresh {@link GlyphGameObject}. Updates texture & size.
+   * @returns Reference to {@link GlyphGameObject} for further chaining.
    */
   refresh() {
     super.refresh();
@@ -271,8 +280,8 @@ export class GlyphGameObject extends Mask(Size(TextureCrop(Tint(class extends Gl
 
   /**
    * Set background color. Updates texture.
-   * @param value ColorLike to use.
-   * @returns Reference to glyph game object for further chaining.
+   * @param value {@link ColorLike} to use.
+   * @returns Reference to {@link GlyphGameObject} for further chaining.
    */
   setBackgroundColor(value: ColorLike) {
     const glyph = this.getGlyphFromTexture();
@@ -281,9 +290,9 @@ export class GlyphGameObject extends Mask(Size(TextureCrop(Tint(class extends Gl
   }
 
   /**
-   * Set code point. Updates texture & size.
-   * @param value CharLike to use.
-   * @returns Reference to glyph game object for further chaining.
+   * Set {@link CodePoint}. Updates texture & size.
+   * @param value {@link CharLike} to use.
+   * @returns Reference to {@link GlyphGameObject} for further chaining.
    */
   setCodePoint(value: CharLike) {
     const glyph = this.getGlyphFromTexture();
@@ -293,8 +302,8 @@ export class GlyphGameObject extends Mask(Size(TextureCrop(Tint(class extends Gl
 
   /**
    * Set foreground color. Updates texture.
-   * @param value ColorLike to use.
-   * @returns Reference to glyph game object for further chaining.
+   * @param value {@link ColorLike} to use.
+   * @returns Reference to {@link GlyphGameObject} for further chaining.
    */
   setForegroundColor(value: ColorLike) {
     const glyph = this.getGlyphFromTexture();
@@ -304,8 +313,8 @@ export class GlyphGameObject extends Mask(Size(TextureCrop(Tint(class extends Gl
 
   /**
    * Set glyph. Updates texture & size.
-   * @param glyph GlyphLike data to use.
-   * @returns Reference to glyph game object for further chaining.
+   * @param glyph {@link GlyphLike} data to use.
+   * @returns Reference to {@link GlyphGameObject} for further chaining.
    */
   setGlyph(glyph: GlyphLike) {
     return this.setTexture(
@@ -315,7 +324,8 @@ export class GlyphGameObject extends Mask(Size(TextureCrop(Tint(class extends Gl
 
   /**
    * Rehydrate glyph data from current texture.
-   * @returns Glyph data for this glyph game object.
+   * @returns Glyph data for this {@link GlyphGameObject}.
+   * @internal
    */
   private getGlyphFromTexture() {
     return Glyph.fromTexture(this.texture);

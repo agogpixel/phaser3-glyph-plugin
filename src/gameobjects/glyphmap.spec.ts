@@ -51,10 +51,19 @@ describe('Glyphmap GameObject Module', () => {
     input.destroy();
   });
 
-  it('instantiates with null font)', () => {
+  it('instantiates with null font', () => {
     const input = new GlyphmapGameObject(scene, 0, 0, 80, 25, null);
     const actual = input.font;
     const expected = defaultFont;
+    expect(actual).toEqual(expected);
+
+    input.destroy();
+  });
+
+  it('instantiates with negative dimensions (defaults to 0)', () => {
+    const input = new GlyphmapGameObject(scene, 0, 0, -1, -1);
+    const actual = [input.widthInCells, input.heightInCells];
+    const expected = [0, 0];
     expect(actual).toEqual(expected);
 
     input.destroy();
@@ -284,6 +293,21 @@ describe('Glyphmap GameObject Module', () => {
     expect(actual).toHaveBeenCalledTimes(expected);
   });
 
+  it('sets cull padding (default)', () => {
+    const input = [] as const;
+
+    const actual = (() => {
+      const glyphmap = new GlyphmapGameObject(scene);
+      glyphmap.setCullPadding(...input);
+      const result = [glyphmap.cullPaddingX, glyphmap.cullPaddingY];
+      glyphmap.destroy();
+      return result;
+    })();
+
+    const expected = [1, 1];
+    expect(actual).toEqual(expected);
+  });
+
   it('sets cull padding', () => {
     const input = [10, 7] as const;
 
@@ -296,6 +320,21 @@ describe('Glyphmap GameObject Module', () => {
     })();
 
     const expected = input;
+    expect(actual).toEqual(expected);
+  });
+
+  it('sets skip cull (default)', () => {
+    const input = [] as const;
+
+    const actual = (() => {
+      const glyphmap = new GlyphmapGameObject(scene);
+      glyphmap.setSkipCull(...input);
+      const result = glyphmap.skipCull;
+      glyphmap.destroy();
+      return result;
+    })();
+
+    const expected = true;
     expect(actual).toEqual(expected);
   });
 
@@ -345,6 +384,21 @@ describe('Glyphmap GameObject Module', () => {
     expect(actual).toHaveBeenCalledTimes(expected);
   });
 
+  it('translates cell X coordinate to world X coordinate (default)', () => {
+    const input = [10] as const;
+
+    const actual = (() => {
+      const glyphmap = new GlyphmapGameObject(scene, 10, 10);
+      const result = glyphmap.cellToWorldX(...input);
+      glyphmap.destroy();
+      return result;
+    })();
+
+    // Assumes cell width is 1px in headless.
+    const expected = 20;
+    expect(actual).toEqual(expected);
+  });
+
   it('translates cell X coordinate to world X coordinate', () => {
     const input = [10, 0] as const;
 
@@ -360,6 +414,21 @@ describe('Glyphmap GameObject Module', () => {
     expect(actual).toEqual(expected);
   });
 
+  it('translates cell Y coordinate to world Y coordinate (default)', () => {
+    const input = [10] as const;
+
+    const actual = (() => {
+      const glyphmap = new GlyphmapGameObject(scene, 10, 7);
+      const result = glyphmap.cellToWorldY(...input);
+      glyphmap.destroy();
+      return result;
+    })();
+
+    // Assumes cell height is 1px in headless.
+    const expected = 17;
+    expect(actual).toEqual(expected);
+  });
+
   it('translates cell Y coordinate to world Y coordinate', () => {
     const input = [10, 0] as const;
 
@@ -372,6 +441,21 @@ describe('Glyphmap GameObject Module', () => {
 
     // Assumes cell height is 1px in headless.
     const expected = 17;
+    expect(actual).toEqual(expected);
+  });
+
+  it('translates cell X,Y coordinate to world X,Y coordinate (default)', () => {
+    const input = [4, 7] as const;
+
+    const actual = (() => {
+      const glyphmap = new GlyphmapGameObject(scene, 8, 7);
+      const result = glyphmap.cellToWorldXY(...input);
+      glyphmap.destroy();
+      return result;
+    })();
+
+    // Assumes cell width & height is 1px in headless.
+    const expected = [12, 14];
     expect(actual).toEqual(expected);
   });
 

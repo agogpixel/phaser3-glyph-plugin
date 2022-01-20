@@ -25,26 +25,32 @@ import {
 } from './gameobjects';
 import type { CharLike, GlyphLike } from './glyph';
 import { normalizeCharLike, normalizeGlyphLike } from './glyph';
-import type { Font } from './utils';
+import type { CodePoint, Font } from './utils';
 import { getHexStringFromCodePoint } from './utils';
 
 /**
- * Glyph plugin initialization data.
+ * {@link GlyphPlugin} initialization data. Data can be passed to
+ * {@link GlyphPlugin.init} via a [Phaser.Types.Core.PluginObjectItem](https://photonstorm.github.io/phaser3-docs/Phaser.Types.Core.html#.PluginObjectItem__anchor)
+ * defined within a [Phaser.Types.Core.GameConfig](https://photonstorm.github.io/phaser3-docs/Phaser.Types.Core.html#.GameConfig__anchor).
  */
 export interface GlyphPluginInitData {
   /**
-   * **Experimental**: Use browser's advanced text metrics API.
+   * **Experimental**: Use browser's advanced text metrics API. Default is
+   * false.
    */
   advancedTextMetrics?: boolean;
 
   /**
    * Code point used for determining default texture frame dimensions.
+   * Default is 0x57 ('W').
    */
   measurementCodePoint?: CharLike;
 }
 
 /**
- * Glyph plugin state - corresponds to PluginManager lifecycle.
+ * {@link GlyphPlugin} state - corresponds to [Phaser.Plugins.PluginManager](https://photonstorm.github.io/phaser3-docs/Phaser.Plugins.PluginManager.html)
+ * lifecycle.
+ * @internal
  */
 export enum GlyphPluginState {
   /**
@@ -69,11 +75,24 @@ export enum GlyphPluginState {
 }
 
 /**
+ * Default measurement code point value.
+ * @internal
+ */
+export const defaultMeasurementCodePoint = 0x57; // 'W'
+
+/**
+ * Default advanced text metrics flag.
+ * @internal
+ */
+export const defaultAdvancedTextMetrics = false;
+
+/**
  * Glyph plugin.
  */
 export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   /**
-   * Mixin GlyphPlugin API with specified scene type.
+   * Mixin the {@link GlyphPlugin} API with specified
+   * [Phaser.Scene](https://photonstorm.github.io/phaser3-docs/Phaser.Scene.html).
    */
   static readonly GlyphScene = createPluginApiMixin<
     GlyphPlugin,
@@ -87,54 +106,57 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
     | 'setProperties',
     {
       /**
-       * Glyph GameObject factory.
+       * {@link GlyphGameObject} factory.
        * @param x (Default: 0) World X-coordinate.
        * @param y (Default: 0) World Y-coordinate.
-       * @param glyph (Optional) Glyphlike data.
-       * @param font (Optional) Font to use.
+       * @param glyph (Default: [' ', '#0000']) {@link GlyphLike} data.
+       * @param font (Default: 'normal normal normal 24px "Lucida Console",
+       * Courier, monospace') {@link Font} to use.
        * @param forceSquareRatio (Optional) Force square glyph frames/cells,
        * using the greater of width or height of the associated glyph plugin's
-       * measurement character.
-       * @param pluginKey (Optional) Glyph plugin key.
-       * @returns Glyph GameObject instance that has been added to the
+       * measurement code point.
+       * @param pluginKey (Optional) Specify a specific {@link GlyphPlugin}
+       * instance (in the plugin manager) to use for textures.
+       * @returns A {@link GlyphGameObject} instance that has been added to the
        * scene's display list.
        */
       glyph: GlyphGameObjectFactory;
 
       /**
-       * Glyphmap factory.
+       * {@link GlyphmapGameObject} factory.
        * @param x (Default: 0) X-coordinate in world space.
        * @param y (Default: 0) Y-coordinate in world space.
        * @param width (Default: 80) Width in cells.
        * @param height (Default: 25) Height in cells.
-       * @param font (Optional) Font to use.
-       * @param pluginKey (Optional) Specify a specific glyph plugin instance
-       * (in the plugin manager) to use for textures.
-       * @returns Glyphmap GameObject instance that has been added to the
-       * scene's display list.
+       * @param font Default: 'normal normal normal 24px "Lucida Console",
+       * Courier, monospace') {@link Font} to use.
+       * @param pluginKey (Optional) Specify a specific {@link GlyphPlugin}
+       * instance (in the plugin manager) to use for textures.
+       * @returns A {@link GlyphmapGameObject} instance that has been added to
+       * the scene's display list.
        */
       glyphmap: GlyphmapGameObjectFactory;
     },
     {
       /**
-       * Glyph GameObject creator.
-       * @param config The configuration object this Game Object will use to
-       * create itself.
+       * {@link GlyphGameObject} creator.
+       * @param config The {@link GlyphGameObjectConfig configuration object}
+       * this Game Object will use to create itself.
        * @param addToScene (Default: true) Add this Game Object to the Scene
        * after creating it? If set this argument overrides the `add` property in
        * the config object.
-       * @returns Glyph GameObject instance.
+       * @returns A {@link GlyphGameObject} instance.
        */
       glyph: GlyphGameObjectCreator;
 
       /**
-       * Glyphmap creator.
-       * @param config The configuration object this Game Object will use to
-       * create itself.
+       * {@link GlyphmapGameObject} creator.
+       * @param config The {@link GlyphmapGameObjectConfig configuration object}
+       * this Game Object will use to create itself.
        * @param addToScene (Default: true) Add this Game Object to the Scene
        * after creating it? If set this argument overrides the `add` property in
        * the config object.
-       * @returns Glyphmap GameObject instance.
+       * @returns A {@link GlyphmapGameObject} instance.
        */
       glyphmap: GlyphmapGameObjectCreator;
     }
@@ -142,18 +164,21 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
 
   /**
    * Frame dimensions cache.
+   * @internal
    */
   private static readonly frameDimensionsCache: Record<string, [number, number]> = {};
 
   /**
    * Text metrics cache.
+   * @internal
    */
   private static readonly textMetricsCache: Record<string, TextMetrics> = {};
 
   /**
-   * Get frame dimensions for specified charlike & font combination.
-   * @param charlike Charlike to use.
-   * @param font Font to use.
+   * Get frame dimensions for specified {@link CharLike} & {@link Font}
+   * combination.
+   * @param charlike {@link CharLike} to use.
+   * @param font {@link Font} to use.
    * @param forceSquareRatio (Default: false) Force square frame, using the
    * greater of width or height.
    * @param advancedTextMetrics (Default: false) **Experimental**: Use
@@ -213,19 +238,24 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   * Generate, cache, & return a texture for specified glyphlike, font, &
-   * measurement character combination. Defines frame dimensions using either
-   * the dimensions associated with the plugin's measurement code point, or the
-   * glyph's dimensions - whichever is greater.
-   * @param textureManager Texture manager instance.
-   * @param glyphlike Glyphlike to draw.
-   * @param font Font to use.
-   * @param measurementCh Measurement character to use.
+   * Generate, cache, & return a [Phaser.Textures.Texture](https://photonstorm.github.io/phaser3-docs/Phaser.Textures.Texture.html)
+   * for specified {@link GlyphLike}, {@link Font}, &
+   * UTF-16 measurement {@link CharLike} combination. Defines frame dimensions using either
+   * the dimensions associated with the specified measurement {@link CharLike}, or the
+   * the {@link CharLike} component of the specified {@link GlyphLike},
+   * whichever is greater.
+   * @param textureManager [Phaser.Textures.TextureManager](https://photonstorm.github.io/phaser3-docs/Phaser.Textures.TextureManager.html)
+   * instance.
+   * @param glyphlike {@link GlyphLike} to use.
+   * @param font {@link Font} to use.
+   * @param measurementCh Measurement {@link CharLike} to use.
    * @param forceSquareRatio (Default: false) Force square frames, using the
    * greater of width or height for each glyph.
    * @param advancedTextMetrics (Default: false) **Experimental**: Use
    * browser's advanced text metrics API.
-   * @returns Texture representation of specified glyphlikes.
+   * @returns [Phaser.Textures.Texture](https://photonstorm.github.io/phaser3-docs/Phaser.Textures.Texture.html)
+   * representation of specified {@link GlyphLike}, {@link Font}, & UTF-16
+   * measurement {@link CharLike} combination.
    */
   static getTexture(
     textureManager: Phaser.Textures.TextureManager,
@@ -281,15 +311,16 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   * Get texture key for specified glyphlike, font, & measurement character
-   * combination.
-   * @param glyphlike Glyphlike to use.
-   * @param font Font to use.
-   * @param measurementCh Measurement character.
+   * Get texture key for specified {@link GlyphLike}, {@link Font}, & UTF-16
+   * measurement {@link CharLike} combination.
+   * @param glyphlike {@link GlyphLike} to use.
+   * @param font {@link Font} to use.
+   * @param measurementCh Measurement {@link CharLike} to use.
    * @param forceSquareRatio (Default: false) Force square frames.
    * @param advancedTextMetrics (Default: false) **Experimental**.
    * @returns Key for corresponding texture that would be generated with
    * specified parameters.
+   * @see {@link GlyphPlugin.getTexture}
    */
   static getTextureKey(
     glyphlike: GlyphLike,
@@ -309,38 +340,43 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
 
   /**
    * Flag that this plugin instance is a GlyphPlugin.
+   * @internal
    */
   readonly isGlyphPlugin = true;
 
   /**
    * Event emitter to emit {@link GlyphPluginEvent}s to listeners.
+   * @internal
    */
   private readonly eventEmitter = new Phaser.Events.EventEmitter();
 
   /**
    * Current plugin state with respect to the PluginManager.
+   * @internal
    */
   private currentState: GlyphPluginState;
 
   /**
    * Tracks current measurement code point.
+   * @internal
    */
-  private currentMeasurementCodePoint = 0x57; // W //0x1f031; // 🀱
+  private currentMeasurementCodePoint = defaultMeasurementCodePoint;
 
   /**
    * Tracks current advanced text metrics value.
+   * @internal
    */
-  private currentAdvancedTextMetrics = false;
+  private currentAdvancedTextMetrics = defaultAdvancedTextMetrics;
 
   /**
    * Get measurement code point.
    */
-  get measurementCodePoint() {
+  get measurementCodePoint(): CodePoint {
     return this.currentMeasurementCodePoint;
   }
 
   /**
-   * Set measurement character.
+   * Set measurement code point with specified {@link CharLike}.
    * @emits {@link GlyphPluginEvent.Update} when set.
    * @see {@link GlyphPlugin.setMeasurementCodePoint}
    */
@@ -365,18 +401,14 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   * Instantiate glyph plugin.
-   * @param pluginManager A reference to the Plugin Manager.
+   * Instantiate {@link GlyphPlugin}.
+   * @param pluginManager A reference to a [Phaser.Plugins.PluginManager](https://photonstorm.github.io/phaser3-docs/Phaser.Plugins.PluginManager.html)
+   * instance.
    */
   constructor(pluginManager: Phaser.Plugins.PluginManager) {
     super(pluginManager);
 
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    //const { glyphFactory, glyphCreator } = require('./gameobjects/glyph');
     pluginManager.registerGameObject('glyph', glyphGameObjectFactory, glyphGameObjectCreator);
-
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    //const { glyphmapFactory, glyphmapCreator } = require('./gameobjects/glyphmap');
     pluginManager.registerGameObject('glyphmap', glyphmapGameObjectFactory, glyphmapGameObjectCreator);
   }
   /**
@@ -397,9 +429,10 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   * Get frame dimensions for specified charlike & font combination.
-   * @param charlike Charlike to use.
-   * @param font Font to use.
+   * Get frame dimensions for specified {@link CharLike} & {@link Font}
+   * combination.
+   * @param charlike {@link CharLike} to use.
+   * @param font {@link Font} to use.
    * @param forceSquareRatio (Default: false) Force square frame, using the
    * greater of width or height.
    * @returns Tuple containing width & height of the frame.
@@ -409,15 +442,17 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   * Generate, cache, & return a texture for specified glyphlike & font
-   * combination. Defines frame dimensions using either the dimensions
-   * associated with the plugin's measurement code point, or the glyph's
-   * dimensions - whichever is greater.
-   * @param glyphlike Glyphlike to draw.
-   * @param font Font to use.
+   * Generate, cache, & return a [Phaser.Textures.Texture](https://photonstorm.github.io/phaser3-docs/Phaser.Textures.Texture.html)
+   * for specified {@link GlyphLike} & {@link Font} combination. Defines frame
+   * dimensions using either the dimensions associated with this plugin's
+   * measurement {@link CodePoint}, or the {@link CharLike} component of the
+   * specified {@link GlyphLike}, whichever is greater.
+   * @param glyphlike {@link GlyphLike} to use.
+   * @param font {@link Font} to use.
    * @param forceSquareRatio (Default: false) Force square frames, using the
    * greater of width or height for each glyph.
-   * @returns Texture representation of specified glyphlike.
+   * @returns [Phaser.Textures.Texture](https://photonstorm.github.io/phaser3-docs/Phaser.Textures.Texture.html)
+   * representation of specified {@link GlyphLike} & {@link Font} combination.
    */
   getTexture(glyphlike: GlyphLike, font: Font, forceSquareRatio = false) {
     return GlyphPlugin.getTexture(
@@ -431,12 +466,13 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   * Get texture key for specified glyphlike & font combination.
-   * @param glyphlike Glyphlike to use.
-   * @param font Font to use.
+   * Get texture key for specified {@link GlyphLike} & {@link Font} combination.
+   * @param glyphlike {@link GlyphLike} to use.
+   * @param font {@link Font} to use.
    * @param forceSquareRatio (Default: false) Force square frames.
    * @returns Key for corresponding texture that would be generated with
    * specified parameters.
+   * @see {@link GlyphPlugin.getTexture}
    */
   getTextureKey(glyphlike: GlyphLike, font: Font, forceSquareRatio = false) {
     return GlyphPlugin.getTextureKey(
@@ -449,13 +485,15 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   * The PluginManager calls this method when the plugin is first instantiated.
-   * It will never be called again on this instance. If a plugin is set to
-   * automatically start then {@link GlyphPlugin.start} will be called
-   * immediately after this.
-   * @param data (Optional) Initialization data from the data property of the
-   * plugin's configuration object (if started at game boot) or passed in the
-   * PluginManager's install method (if started manually).
+   * The [Phaser.Plugins.PluginManager](https://photonstorm.github.io/phaser3-docs/Phaser.Plugins.PluginManager.html)
+   * calls this method when the {@link GlyphPlugin} is first instantiated. It
+   * will never be called again on this instance. If set to automatically start,
+   * then {@link GlyphPlugin.start} will be called immediately after this.
+   * @param data (Optional) {@link GlyphPluginInitData} from the data property of the
+   * {@link GlyphPlugin}'s [configuration object](https://photonstorm.github.io/phaser3-docs/Phaser.Types.Core.html#.PluginObjectItem__anchor)
+   * (if started at game boot) or passed in the PluginManager's [install method](https://photonstorm.github.io/phaser3-docs/Phaser.Plugins.PluginManager.html#install__anchor)
+   * (if started manually).
+   * @throws Error when not in a valid state.
    */
   init(data?: GlyphPluginInitData) {
     if (this.currentState !== undefined) {
@@ -467,12 +505,12 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   * Remove the listeners of a given event.
+   * Remove the listeners of a given {@link GlyphPluginEvent}.
    * @param event The event name.
    * @param fn Only remove the listeners that match this function.
    * @param context Only remove the listeners that have this context.
    * @param once Only remove one-time listeners.
-   * @returns Glyph plugin instance for further chaining.
+   * @returns The {@link GlyphPlugin} instance for further chaining.
    */
   off<E extends GlyphPluginEvent>(event: E, fn: GlyphPluginEventListener<E>, context?: unknown, once?: boolean) {
     this.eventEmitter.off(event, fn, context, once);
@@ -480,11 +518,11 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   * Add a listener for a given event.
+   * Add a listener for a given {@link GlyphPluginEvent}.
    * @param event The event name.
    * @param fn The listener function.
    * @param context The context to invoke the listener with. Default this.
-   * @returns Glyph plugin instance for further chaining.
+   * @returns The {@link GlyphPlugin} instance for further chaining.
    */
   on<E extends GlyphPluginEvent>(event: E, fn: GlyphPluginEventListener<E>, context?: unknown) {
     this.eventEmitter.on(event, fn, context);
@@ -492,11 +530,11 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   * Add a one-time listener for a given event.
+   * Add a one-time listener for a given {@link GlyphPluginEvent}.
    * @param event The event name.
    * @param fn The listener function.
    * @param context The context to invoke the listener with. Default this.
-   * @returns Glyph plugin instance for further chaining.
+   * @returns The {@link GlyphPlugin} instance for further chaining.
    */
   once<E extends GlyphPluginEvent>(event: E, fn: GlyphPluginEventListener<E>, context?: unknown) {
     this.eventEmitter.once(event, fn, context);
@@ -506,7 +544,7 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   /**
    * Set advanced text metrics.
    * @param value (Default: true) Advanced text metrics flag.
-   * @returns Glyph plugin instance for further chaining.
+   * @returns The {@link GlyphPlugin} instance for further chaining.
    * @emits {@link GlyphPluginEvent.Update} when flag has changed.
    */
   setAdvancedTextMetrics(value = true) {
@@ -514,9 +552,9 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   * Set measurement code point.
-   * @param charlike Charlike to use.
-   * @returns Glyph plugin instance for further chaining.
+   * Set measurement {@link CodePoint}.
+   * @param charlike {@link CharLike} to use.
+   * @returns The {@link GlyphPlugin} instance for further chaining.
    * @emits {@link GlyphPluginEvent.Update} when code point value has changed.
    */
   setMeasurementCodePoint(charlike: CharLike) {
@@ -524,9 +562,9 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   * Set glyph plugin properties.
-   * @param data The plugin properties to set.
-   * @returns Glyph plugin instance for further chaining.
+   * Set {@link GlyphPlugin} properties.
+   * @param data The {@link GlyphPluginInitData properties} to set.
+   * @returns The {@link GlyphPlugin} instance for further chaining.
    * @emits {@link GlyphPluginEvent.Update} when at least one property has
    * changed.
    */
@@ -554,9 +592,11 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   * The PluginManager calls this method on when the plugin is started. If a
-   * plugin is stopped, and then started again, this will get called again.
-   * Typically called immediately after {@link GlyphPlugin.init}.
+   * The [Phaser.Plugins.PluginManager](https://photonstorm.github.io/phaser3-docs/Phaser.Plugins.PluginManager.html)
+   * calls this method on when the {@link GlyphPlugin} is started. If a
+   * {@link GlyphPlugin} is stopped, and then started again, this will get
+   * called again. Typically called immediately after {@link GlyphPlugin.init}.
+   * @throws Error when not in a valid state.
    */
   start() {
     if (this.currentState !== GlyphPluginState.Initialized && this.currentState !== GlyphPluginState.Stopped) {
@@ -570,9 +610,12 @@ export class GlyphPlugin extends Phaser.Plugins.BasePlugin {
   }
 
   /**
-   * The PluginManager calls this method on when the plugin is stopped. It is
-   * now considered as 'inactive' by the PluginManager. If the plugin is started
-   * again then {@link GlyphPlugin.start} will be called again.
+   * The [Phaser.Plugins.PluginManager](https://photonstorm.github.io/phaser3-docs/Phaser.Plugins.PluginManager.html)
+   * calls this method on when the {@link GlyphPlugin} is stopped. It is
+   * now considered 'inactive' by the [Phaser.Plugins.PluginManager](https://photonstorm.github.io/phaser3-docs/Phaser.Plugins.PluginManager.html).
+   * If the {@link GlyphPlugin} is started again then {@link GlyphPlugin.start}
+   * will be called again.
+   * @throws Error when not in a valid state.
    */
   stop() {
     if (this.currentState !== GlyphPluginState.Started) {

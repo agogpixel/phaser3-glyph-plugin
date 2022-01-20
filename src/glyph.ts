@@ -24,14 +24,16 @@ import {
 
 /**
  * Union of types suitable for representing a UTF-16 character.
+ * @see {@link CodePoint}
  */
-export type CharLike = number | string;
+export type CharLike = CodePoint | string;
 
 /**
- * Normalize specified CharLike to UTF-16 code point.
+ * Normalize specified {@link CharLike} to UTF-16 {@link CodePoint}.
  *
- * @param ch CharLike to normalize.
- * @returns UTF-16 code point.
+ * @param ch {@link CharLike} to normalize.
+ * @returns UTF-16 {@link CodePoint}.
+ * @internal
  */
 export function normalizeCharLike(ch: CharLike): CodePoint {
   // Sign bit is 0.
@@ -44,6 +46,9 @@ export function normalizeCharLike(ch: CharLike): CodePoint {
 
 /**
  * Union of various types suitable for RGB & RGBA color representation.
+ * @see [Phaser.Types.Display.ColorObject](https://photonstorm.github.io/phaser3-docs/Phaser.Types.Display.html#.ColorObject__anchor)
+ * @see [Phaser.Types.Display.InputColorObject](https://photonstorm.github.io/phaser3-docs/Phaser.Types.Display.html#.InputColorObject__anchor)
+ * @see [Phaser.Display.Color](https://photonstorm.github.io/phaser3-docs/Phaser.Display.Color.html)
  */
 export type ColorLike =
   | number
@@ -53,12 +58,19 @@ export type ColorLike =
   | Phaser.Display.Color;
 
 /**
- * Normalize specified ColorLike to [Phaser.Display.Color](https://photonstorm.github.io/phaser3-docs/Phaser.Display.Color.html)
- * instance.
- * @param color ColorLike to normalize.
+ * Normalize specified {@link ColorLike} to [Phaser.Display.Color](https://photonstorm.github.io/phaser3-docs/Phaser.Display.Color.html)
+ * instance. Accepts the following:
+ * - `number`: Parsed as `0xRRGGBB` or `0xAARRGGBB` as appropriate.
+ * - `string`: CSS color name, hexadecimal string (`#RGB`, `#RRGGBB`, `#RGBA`,
+ * `#RRGGBBAA`), or functional string (`rgb(...)` or `rgba(...)`).
+ * - [Phaser.Types.Display.ColorObject](https://photonstorm.github.io/phaser3-docs/Phaser.Types.Display.html#.ColorObject__anchor)
+ * - [Phaser.Types.Display.InputColorObject](https://photonstorm.github.io/phaser3-docs/Phaser.Types.Display.html#.InputColorObject__anchor)
+ * - [Phaser.Display.Color](https://photonstorm.github.io/phaser3-docs/Phaser.Display.Color.html)
+ * @param color {@link ColorLike} to normalize.
  * @returns [Phaser.Display.Color](https://photonstorm.github.io/phaser3-docs/Phaser.Display.Color.html)
  * instance.
- * @throws Error if ColorLike is an invalid type or an invalid color string.
+ * @throws Error if {@link ColorLike} is an invalid type or an invalid color string.
+ * @internal
  */
 export function normalizeColorLike(color: ColorLike) {
   if (color instanceof Phaser.Display.Color) {
@@ -98,18 +110,24 @@ export function normalizeColorLike(color: ColorLike) {
 
 /**
  * Glyph JSON interface.
+ * - `[codePoint, fgColor, bgColor]`
+ *   - fgColor: `[red, green, blue, alpha]`
+ *   - bgColor: `[red, green, blue, alpha]`
+ * @internal
  */
 export type GlyphJson = [number, [number, number, number, number?], [number, number, number, number?]];
 
 /**
  * Glyph abstract data type.
+ * @internal
  */
 export class Glyph {
   /**
-   * Rehydrate a Glyph instance from hex string representation.
+   * Rehydrate a {@link Glyph} instance from hex string representation.
    * @param hex Hexadecimal string.
-   * @returns Glyph instance.
-   * @throws Error if hex string contains invalid characters or has length that is not 20 or 24.
+   * @returns A {@link Glyph} instance.
+   * @throws Error if hex string contains invalid characters or has length that
+   * is not 20 or 24.
    */
   static fromHexString(hex: string) {
     const len = hex.length;
@@ -126,11 +144,11 @@ export class Glyph {
   }
 
   /**
-   * Rehydrate a Glyph instance from JSON string representation.
+   * Rehydrate a {@link Glyph} instance from JSON string representation.
    * @param json JSON string.
-   * @returns Glyph instance.
+   * @returns A {@link Glyph} instance.
    * @throws Error if JSON string contains invalid characters or does not
-   * conform to GlyphJson type.
+   * conform to {@link GlyphJson} type.
    */
   static fromJsonString(json: string) {
     const glyph = JSON.parse(json) as GlyphJson;
@@ -138,23 +156,37 @@ export class Glyph {
   }
 
   /**
-   * Rehydrate a Glyph instance from a texture that contains a valid key.
-   * @param texture Phaser texture instance.
-   * @returns Glyph instance.
+   * Rehydrate a {@link Glyph} instance from a [Phaser.Textures.Texture](https://photonstorm.github.io/phaser3-docs/Phaser.Textures.Texture.html)
+   * instance that contains a valid key.
+   * @param texture [Phaser.Textures.Texture](https://photonstorm.github.io/phaser3-docs/Phaser.Textures.Texture.html)
+   * instance.
+   * @returns A {@link Glyph} instance.
    * @throws Error if texture key is invalid.
    */
   static fromTexture(texture: Phaser.Textures.Texture) {
-    return Glyph.fromHexString(texture.key.split(' ')[0]);
+    return Glyph.fromHexString(Glyph.readHexStringFromTexture(texture));
   }
 
   /**
-   * Instantiate glyph abstract data type.
+   * Read hex string from a [Phaser.Textures.Texture](https://photonstorm.github.io/phaser3-docs/Phaser.Textures.Texture.html)
+   * instance that contains a valid key.
+   * @param texture [Phaser.Textures.Texture](https://photonstorm.github.io/phaser3-docs/Phaser.Textures.Texture.html)
+   * instance.
+   * @returns Hex string.
+   * @throws Error if texture key is invalid.
+   */
+  static readHexStringFromTexture(texture: Phaser.Textures.Texture) {
+    return texture.key.split(' ')[0];
+  }
+
+  /**
+   * Instantiate {@link Glyph} abstract data type.
    * @param codePoint Code point.
    * @param foregroundColor Foreground color.
    * @param backgroundColor Background color.
    */
   constructor(
-    public codePoint: number,
+    public codePoint: CodePoint,
     public foregroundColor: Phaser.Display.Color,
     public backgroundColor: Phaser.Display.Color
   ) {}
@@ -182,8 +214,8 @@ export class Glyph {
   }
 
   /**
-   * Get hex string representation of glyph instance.
-   * @returns Hex string representation of glyph instance.
+   * Get hex string representation of {@link Glyph} instance.
+   * @returns Hex string representation of {@link Glyph} instance.
    */
   toHexString() {
     return (
@@ -194,8 +226,8 @@ export class Glyph {
   }
 
   /**
-   * Get JSON string representation of glyph instance.
-   * @returns JSON string representation of glyph instance.
+   * Get JSON string representation of {@link Glyph} instance.
+   * @returns JSON string representation of {@link Glyph} instance.
    */
   toJsonString() {
     const fg = this.foregroundColor;
@@ -209,8 +241,8 @@ export class Glyph {
   }
 
   /**
-   * Get string representation of glyph instance.
-   * @returns String representation of glyph instance.
+   * Get string representation of {@link Glyph} instance.
+   * @returns String representation of {@link Glyph} instance.
    */
   toString() {
     return this.toJsonString();
@@ -224,27 +256,36 @@ export class Glyph {
 /**
  * Object mapping character, foreground color, & optional background color types that
  * can be used to represent a glyph.
+ * @see {@link CharLike}
+ * @see {@link ColorLike}
  */
 export type GlyphLikeObject = { ch: CharLike; fg: ColorLike; bg?: ColorLike };
 
 /**
  * Tuple of character, foreground color, & optional background color types that
  * can be used to represent a glyph.
+ * @see {@link CharLike}
+ * @see {@link ColorLike}
  */
 export type GlyphLikeTuple = [CharLike, ColorLike, ColorLike?];
 
 /**
  * Character, foreground color, & optional background color data that can be
  * used to represent a glyph.
+ * @see {@link CharLike}
+ * @see {@link ColorLike}
+ * @see {@link GlyphLikeObject}
+ * @see {@link GlyphLikeTuple}
  */
 export type GlyphLike = GlyphLikeObject | GlyphLikeTuple;
 
 /**
- * Normalize specified GlyphLike to {@link Glyph} instance.
- * @param glyph GlyphLike to normalize.
- * @returns A {@link Glyph} instance corresponding to specified GlyphLike.
- * @throws Error if ColorLike component(s) are an invalid type or an invalid
+ * Normalize specified {@link GlyphLike} to {@link Glyph} instance.
+ * @param glyph {@link GlyphLike} to normalize.
+ * @returns A {@link Glyph} instance corresponding to specified {@link GlyphLike}.
+ * @throws Error if {@link ColorLike} component(s) are an invalid type or an invalid
  * color string.
+ * @internal
  */
 export function normalizeGlyphLike(glyph: GlyphLike) {
   let codePoint: number;

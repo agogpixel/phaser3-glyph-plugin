@@ -10,51 +10,58 @@
 import type { CodePoint } from './utils';
 
 /**
- * Glyph plugin update event data.
+ * Represents the changed properties for a given {@link GlyphPlugin} instance.
+ * This data is emitted whenever {@link GlyphPluginEvent.Update} is fired.
+ * @see {@link GlyphPluginUpdateEventListener}
  */
-export type GlyphPluginUpdateEventData = Readonly<
-  Partial<{
-    /**
-     * Measurement code point.
-     */
-    measurementCodePoint: CodePoint;
+export interface GlyphPluginUpdateEventData {
+  /**
+   * New measurement code point value.
+   */
+  readonly measurementCodePoint?: CodePoint;
 
-    /**
-     * Advanced text metrics flag.
-     */
-    advancedTextMetrics: boolean;
-  }>
->;
+  /**
+   * New advanced text metrics flag.
+   */
+  readonly advancedTextMetrics?: boolean;
+}
 
 /**
- * Glyph plugin update event listener type.
+ * Represents a {@link GlyphPlugin}
+ * {@link GlyphPluginEvent.Update update event} listener.
  */
 export type GlyphPluginUpdateEventListener = (data: GlyphPluginUpdateEventData) => void;
 
 /**
- * Glyph plugin destroy event listener type.
+ * Represents a {@link GlyphPlugin}
+ * {@link GlyphPluginEvent.Destroy destroy event} listener.
  */
 export type GlyphPluginDestroyEventListener = () => void;
 
 /**
- * Get glyph plugin event listener type from glyph event name.
+ * Resolves a given {@link GlyphPluginEvent} to its corresponding event listener
+ * type.
+ * @template E The {@link GlyphPluginEvent} to resolve.
+ * @see {@link GlyphPluginUpdateEventListener}
+ * @see {@link GlyphPluginDestroyEventListener}
  */
 export type GlyphPluginEventListener<E extends GlyphPluginEvent> = E extends GlyphPluginEvent.Update
   ? GlyphPluginUpdateEventListener
   : GlyphPluginDestroyEventListener;
 
 /**
- * Glyph plugin event.
+ * {@link GlyphPlugin} event enumeration.
  */
 export enum GlyphPluginEvent {
   /**
-   * Emitted when `measurementCodePoint` or `advancedTextMetrics` plugin properties
-   * are updated.
+   * Emits {@link GlyphPluginUpdateEventData} when plugin properties are
+   * updated.
    */
   Update = 'update',
 
   /**
-   * Emitted when plugin is destroyed.
+   * Fired when a given {@link GlyphPlugin} instance is destroyed (its
+   * {@link GlyphPlugin.destroy} method is called).
    */
   Destroy = 'destroy'
 }

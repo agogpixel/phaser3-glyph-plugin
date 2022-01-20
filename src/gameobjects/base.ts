@@ -5,6 +5,7 @@
  * @copyright 2021-present AgogPixel
  * @license {@link https://agogpixel.github.io/phaser3-glyph-plugin/LICENSE|MIT License}
  * @module
+ * @internal
  */
 
 import {
@@ -27,7 +28,7 @@ import type { GlyphPlugin } from '../plugins';
 import { Font } from '../utils';
 
 /**
- * Glyph plugin game object WebGL renderer type.
+ * {@link GlyphPluginGameObject} WebGL renderer type.
  * @internal
  */
 export type GlyphPluginGameObjectWebGLRenderer<T extends GlyphPluginGameObject = GlyphPluginGameObject> = (
@@ -38,7 +39,7 @@ export type GlyphPluginGameObjectWebGLRenderer<T extends GlyphPluginGameObject =
 ) => void;
 
 /**
- * Glyph plugin game object canvas renderer type.
+ * {@link GlyphPluginGameObject} canvas renderer type.
  * @internal
  */
 export type GlyphPluginGameObjectCanvasRenderer<T extends GlyphPluginGameObject = GlyphPluginGameObject> = (
@@ -49,11 +50,12 @@ export type GlyphPluginGameObjectCanvasRenderer<T extends GlyphPluginGameObject 
 ) => void;
 
 /**
- * Glyph plugin game object configuration.
+ * {@link GlyphPluginGameObject} creator configuration.
+ * @internal
  */
 export interface GlyphPluginGameObjectConfig extends Phaser.Types.GameObjects.GameObjectConfig {
   /**
-   * Font.
+   * {@link Font} to be used.
    */
   font?: Font;
 
@@ -63,18 +65,22 @@ export interface GlyphPluginGameObjectConfig extends Phaser.Types.GameObjects.Ga
   forceSquareRatio?: boolean;
 
   /**
-   * Glyph plugin key.
+   * Key indicating the specific {@link GlyphPlugin} instance that the
+   * {@link GlyphPluginGameObject} will use.
    */
   pluginKey?: string;
 }
 
 /**
- * Find glyph plugin in plugin manager.
- * @param pluginManager Plugin manager instance.
- * @param key (Optional) Plugin key to search for.
- * @returns Returns glyph plugin as specified by key, or fallback to first
- * glyph plugin found.
- * @throws Error if no glyph plugin instance exists in the plugin manager.
+ * Find {@link GlyphPlugin} in [Phaser.Plugins.PluginManager](https://photonstorm.github.io/phaser3-docs/Phaser.Plugins.PluginManager.html).
+ * @param pluginManager [Phaser.Plugins.PluginManager](https://photonstorm.github.io/phaser3-docs/Phaser.Plugins.PluginManager.html)
+ * instance.
+ * @param key (Optional) {@link GlyphPlugin} key to search for.
+ * @returns Returns {@link GlyphPlugin} as specified by key, or fallback to first
+ * {@link GlyphPlugin} found.
+ * @throws Error if no {@link GlyphPlugin} instance exists in the
+ * [Phaser.Plugins.PluginManager](https://photonstorm.github.io/phaser3-docs/Phaser.Plugins.PluginManager.html).
+ * @internal
  */
 export function findGlyphPlugin(pluginManager: Phaser.Plugins.PluginManager, key?: string) {
   let plugin: GlyphPlugin;
@@ -95,13 +101,15 @@ export function findGlyphPlugin(pluginManager: Phaser.Plugins.PluginManager, key
 }
 
 /**
- * Default font.
+ * Default {@link Font}.
  * @internal
  */
 export const defaultFont = new Font(24, '"Lucida Console", Courier, monospace');
 
 /**
- * Base game object with glyph plugin functionality.
+ * Base [Phaser.GameObject.GameObject](https://photonstorm.github.io/phaser3-docs/Phaser.GameObjects.GameObject.html)
+ * with {@link GlyphPlugin} functionality.
+ * @internal
  */
 export class GlyphPluginGameObject extends CustomGameObject(
   false,
@@ -117,46 +125,49 @@ export class GlyphPluginGameObject extends CustomGameObject(
   Visible
 ) {
   /**
-   * Glyph plugin game object WebGL renderer.
+   * {@link GlyphPluginGameObject} WebGL renderer.
    * @protected
    * @internal
    */
   readonly renderWebGL: GlyphPluginGameObjectWebGLRenderer = Phaser.Utils.NOOP;
 
   /**
-   * Glyph plugin game object canvas renderer.
+   * {@link GlyphPluginGameObject} canvas renderer.
    * @protected
    * @internal
    */
   readonly renderCanvas: GlyphPluginGameObjectCanvasRenderer = Phaser.Utils.NOOP;
 
   /**
-   * Track current font.
+   * Track current {@link Font}.
    * @protected
+   * @internal
    */
   _currentFont: Font;
 
   /**
    * Track current force square ratio flag.
    * @protected
+   * @internal
    */
   _currentForceSquareRatio: boolean;
 
   /**
-   * Track current glyph plugin.
+   * Track current {@link GlyphPlugin}.
    * @protected
+   * @internal
    */
   _currentGlyphPlugin: GlyphPlugin;
 
   /**
-   * Get readonly reference to font.
+   * Get readonly reference to {@link Font}.
    */
   get font(): Readonly<Font> {
     return this._currentFont;
   }
 
   /**
-   * Set font.
+   * Set {@link Font}.
    * @see {@link GlyphPluginGameObject.setFont}
    */
   set font(value: Font) {
@@ -179,14 +190,14 @@ export class GlyphPluginGameObject extends CustomGameObject(
   }
 
   /**
-   * Get glyph plugin.
+   * Get {@link GlyphPlugin}.
    */
   get glyphPlugin() {
     return this._currentGlyphPlugin;
   }
 
   /**
-   * Set glyph plugin.
+   * Set {@link GlyphPlugin}.
    * @see {@link GlyphPluginGameObject.setGlyphPlugin}
    */
   set glyphPlugin(value: GlyphPlugin) {
@@ -194,19 +205,17 @@ export class GlyphPluginGameObject extends CustomGameObject(
   }
 
   /**
-   * Instantiate glyph plugin game object.
-   * @param scene The Scene to which this Game Object belongs.
-   * @param type A textual representation of this Game Object, i.e. sprite. Used
-   * internally by Phaser but is available for your own custom classes to
-   * populate.
+   * Instantiate {@link GlyphPluginGameObject}.
+   * @param scene The [Phaser.Scene](https://photonstorm.github.io/phaser3-docs/Phaser.Scene.html)
+   * to which this {@link GlyphPluginGameObject} belongs.
+   * @param type A textual representation of this {@link GlyphPluginGameObject},
+   * i.e. glyph. Used internally by Phaser.
    * @param x (Default: 0) World X-coordinate.
    * @param y (Default: 0) World Y-coordinate.
    * @param font (Default: 'normal normal normal 24px "Lucida Console", Courier, monospace')
-   * Font to use.
-   * @param forceSquareRatio (Default: false) Force square glyph frames/cells,
-   * using the greater of width or height of the associated glyph plugin's
-   * measurement character.
-   * @param pluginKey (Optional) Glyph plugin key.
+   * {@link Font} to use.
+   * @param forceSquareRatio (Default: false) Force square a frame.
+   * @param pluginKey (Optional) {@link GlyphPlugin} key.
    */
   constructor(
     scene: Phaser.Scene,
@@ -227,9 +236,9 @@ export class GlyphPluginGameObject extends CustomGameObject(
   }
 
   /**
-   * Destroy glyph plugin game object & resources.
-   * @param fromScene (Default: false) Is Game Object is being destroyed by the
-   * Scene?
+   * Destroy {@link GlyphPluginGameObject} & resources.
+   * @param fromScene (Default: false) Destroyed by the
+   * [Phaser.Scene](https://photonstorm.github.io/phaser3-docs/Phaser.Scene.html)?
    */
   destroy(fromScene?: boolean) {
     super.destroy(fromScene);
@@ -237,17 +246,17 @@ export class GlyphPluginGameObject extends CustomGameObject(
   }
 
   /**
-   * Refresh glyph plugin game object.
-   * @returns Glyph plugin game object instance for further chaining.
+   * Refresh {@link GlyphPluginGameObject}.
+   * @returns The {@link GlyphPluginGameObject} instance for further chaining.
    */
   refresh() {
     return this;
   }
 
   /**
-   * Set font. Refreshes glyph plugin game object.
-   * @param font Font.
-   * @returns Glyph plugin game object instance for further chaining.
+   * Set {@link Font}. Refreshes {@link GlyphPluginGameObject}.
+   * @param font {@link Font} to use.
+   * @returns The {@link GlyphPluginGameObject} instance for further chaining.
    */
   setFont(font: Font) {
     this._currentFont = Font.clone(font);
@@ -255,9 +264,9 @@ export class GlyphPluginGameObject extends CustomGameObject(
   }
 
   /**
-   * Set force square ratio. Refreshes glyph plugin game object.
+   * Set force square ratio. Refreshes {@link GlyphPluginGameObject}.
    * @param value (Default: true) Force square ratio flag.
-   * @returns Glyph plugin game object instance for further chaining.
+   * @returns The {@link GlyphPluginGameObject} instance for further chaining.
    */
   setForceSquareRatio(value = true) {
     this._currentForceSquareRatio = value;
@@ -265,10 +274,10 @@ export class GlyphPluginGameObject extends CustomGameObject(
   }
 
   /**
-   * Set associated glyph plugin & update event listeners. Refreshes glyph
-   * plugin game object.
-   * @param plugin Glyph plugin instance.
-   * @returns Glyph plugin game object instance for further chaining.
+   * Set associated {@link GlyphPlugin} & update event listeners.
+   * Refreshes {@link GlyphPluginGameObject}.
+   * @param plugin {@link GlyphPlugin} instance.
+   * @returns The {@link GlyphPluginGameObject} instance for further chaining.
    */
   setGlyphPlugin(plugin: GlyphPlugin) {
     this._removeGlyphPluginEventListeners();
@@ -277,9 +286,10 @@ export class GlyphPluginGameObject extends CustomGameObject(
   }
 
   /**
-   * Add glyph plugin event listeners.
-   * @returns Glyph plugin game object instance for further chaining.
+   * Add {@link GlyphPlugin} event listeners.
+   * @returns The {@link GlyphPluginGameObject} instance for further chaining.
    * @private
+   * @internal
    */
   _addGlyphPluginEventListeners() {
     if (this._currentGlyphPlugin) {
@@ -292,11 +302,14 @@ export class GlyphPluginGameObject extends CustomGameObject(
   }
 
   /**
-   * When associated glyph plugin is destroyed, glyph plugin game object will
-   * attempt to fallback to first glyph plugin found in the plugins manager,
+   * When associated {@link GlyphPlugin} is destroyed,
+   * {@link GlyphPluginGameObject} will attempt to fallback to first
+   * {@link GlyphPlugin} found in the [Phaser.Plugins.PluginManager](https://photonstorm.github.io/phaser3-docs/Phaser.Plugins.PluginManager.html),
    * refreshing & registering new event listeners.
-   * @throws Error if no glyph plugin is found in the plugin manager.
+   * @throws Error if no {@link GlyphPlugin} is found in the
+   * [Phaser.Plugins.PluginManager](https://photonstorm.github.io/phaser3-docs/Phaser.Plugins.PluginManager.html).
    * @private
+   * @internal
    */
   _glyphPluginDestroyEventListener() {
     if (!this.scene) {
@@ -308,9 +321,10 @@ export class GlyphPluginGameObject extends CustomGameObject(
   }
 
   /**
-   * When associated glyph plugin emits update event, refresh the glyph plugin
-   * game object.
+   * When associated {@link GlyphPlugin} emits {@link GlyphPluginEvent.Update},
+   * refresh the {@link GlyphPluginGameObject}.
    * @private
+   * @internal
    */
   _glyphPluginUpdateEventListener(data: GlyphPluginUpdateEventData) {
     if (data.advancedTextMetrics !== undefined || data.measurementCodePoint !== undefined) {
@@ -319,9 +333,10 @@ export class GlyphPluginGameObject extends CustomGameObject(
   }
 
   /**
-   * Remove glyph plugin event listeners.
-   * @returns Glyph plugin game object instance for further chaining.
+   * Remove {@link GlyphPlugin} event listeners.
+   * @returns The {@link GlyphPluginGameObject} instance for further chaining.
    * @private
+   * @internal
    */
   _removeGlyphPluginEventListeners() {
     if (this._currentGlyphPlugin) {

@@ -1,7 +1,7 @@
 import { GlyphPluginEvent } from './events';
 import { GlyphGameObject, GlyphmapGameObject } from './gameobjects';
 import type { GlyphLike } from './glyph';
-import { GlyphPlugin, GlyphPluginState } from './plugins';
+import { defaultAdvancedTextMetrics, defaultMeasurementCodePoint, GlyphPlugin, GlyphPluginState } from './plugins';
 import { Font } from './utils';
 
 // Squelch console.log output.
@@ -263,7 +263,7 @@ describe('Plugins Module', () => {
       );
 
       const actual = input.measurementCodePoint;
-      const expected = 0x57; //0x1f031;
+      const expected = defaultMeasurementCodePoint;
       expect(actual).toEqual(expected);
 
       game.destroy(true);
@@ -312,7 +312,7 @@ describe('Plugins Module', () => {
       );
 
       const actual = input.advancedTextMetrics;
-      const expected = false;
+      const expected = defaultAdvancedTextMetrics;
       expect(actual).toEqual(expected);
 
       game.destroy(true);
@@ -577,7 +577,7 @@ describe('Plugins Module', () => {
 
       it('maps to a scene', () => {
         const input = [
-          ['glyph', 0x57, /*0x1f031,*/ false],
+          ['glyph', defaultMeasurementCodePoint, defaultAdvancedTextMetrics],
           ['glyph2', 0x4d, true]
         ] as const;
 

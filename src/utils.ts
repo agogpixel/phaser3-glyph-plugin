@@ -15,14 +15,16 @@ import colorString from 'color-string';
 
 /**
  * Alias for Uint8Array type.
+ * @internal
  */
 export type Bytes = Uint8Array;
 
 /**
- * Get bytes from hex string.
+ * Get {@link Bytes} from hex string.
  * @param hex Hexadecimal string.
- * @returns Bytes corresponding to hex string representation.
+ * @returns The {@link Bytes} corresponding to the hex string representation.
  * @throws Error if hex string contains invalid characters or has odd length.
+ * @internal
  */
 export function getBytesFromHexString(hex: string): Bytes {
   if (hex.match(/^[0-9A-Fa-f]+$/) === null) {
@@ -36,9 +38,10 @@ export function getBytesFromHexString(hex: string): Bytes {
 }
 
 /**
- * Get hex string from bytes.
- * @param bytes Uint8Array reference.
- * @returns Hex string representation of bytes.
+ * Get hex string from {@link Bytes}.
+ * @param bytes The {@link Bytes} to read.
+ * @returns Hex string representation of {@link Bytes}.
+ * @internal
  */
 export function getHexStringFromBytes(bytes: Bytes) {
   return bytes.reduce((s, c) => s + c.toString(16).padStart(2, '0'), '');
@@ -49,14 +52,15 @@ export function getHexStringFromBytes(bytes: Bytes) {
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Alias for number type.
+ * UTF-16 code point.
  */
 export type CodePoint = number;
 
 /**
- * Get bytes from code point.
- * @param codePoint UTF-16 code point.
- * @returns Bytes corresponding to the UTF-16 code point value.
+ * Get {@link Bytes} from {@link CodePoint}.
+ * @param codePoint UTF-16 {@link CodePoint} to use.
+ * @returns The {@link Bytes} corresponding to the UTF-16 {@link CodePoint} value.
+ * @internal
  */
 export function getBytesFromCodePoint(codePoint: CodePoint): Bytes {
   const parts: number[] = [];
@@ -73,10 +77,11 @@ export function getBytesFromCodePoint(codePoint: CodePoint): Bytes {
 }
 
 /**
- * Get UTF-16 code point from bytes.
- * @param bytes Uint8Array reference.
- * @returns UTF-16 code point value corresponding to bytes.
- * @throws Error if bytes length is not 2 or 4.
+ * Get UTF-16 {@link CodePoint} from {@link Bytes}.
+ * @param bytes The {@link Bytes} to read.
+ * @returns UTF-16 {@link CodePoint} value corresponding to {@link Bytes}.
+ * @throws Error if {@link Bytes} length is not 2 or 4.
+ * @internal
  */
 export function getCodePointFromBytes(bytes: Bytes): CodePoint {
   const len = bytes.length;
@@ -93,20 +98,22 @@ export function getCodePointFromBytes(bytes: Bytes): CodePoint {
 }
 
 /**
- * Get UTF-16 code point from hex string.
+ * Get UTF-16 {@link CodePoint} from hex string.
  * @param hex Hexadecimal string.
- * @returns UTF-16 code point value corresponding to hex string.
+ * @returns UTF-16 {@link CodePoint} value corresponding to hex string.
  * @throws Error if hex string contains invalid characters or has odd length or
- * results in a value with byte length that is not 2 or 4.
+ * results in a value with {@link Bytes} length that is not 2 or 4.
+ * @internal
  */
 export function getCodePointFromHexString(hex: string): CodePoint {
   return getCodePointFromBytes(getBytesFromHexString(hex));
 }
 
 /**
- * Get hex string from UTF-16 code point.
- * @param codePoint UTF-16 code point.
- * @returns Hex string representation of UTF-16 code point value.
+ * Get hex string from UTF-16 {@link CodePoint}.
+ * @param codePoint UTF-16 {@link CodePoint}.
+ * @returns Hex string representation of UTF-16 {@link CodePoint} value.
+ * @internal
  */
 export function getHexStringFromCodePoint(codePoint: CodePoint) {
   return getHexStringFromBytes(getBytesFromCodePoint(codePoint));
@@ -118,15 +125,18 @@ export function getHexStringFromCodePoint(codePoint: CodePoint) {
 
 /**
  * String literal type indicating CSS color notation.
+ * @internal
  */
 export type CssColorNotation = 'hexadecimal' | 'functional';
 
 /**
- * Get bytes from [Phaser.Display.Color](https://photonstorm.github.io/phaser3-docs/Phaser.Display.Color.html)
+ * Get {@link Bytes} from [Phaser.Display.Color](https://photonstorm.github.io/phaser3-docs/Phaser.Display.Color.html)
  * instance.
- * @param color Phaser.Display.Color instance.
- * @returns Bytes corresponding to the Phaser.Display.Color instance, in RGBA
- * order.
+ * @param color [Phaser.Display.Color](https://photonstorm.github.io/phaser3-docs/Phaser.Display.Color.html)
+ * instance.
+ * @returns The {@link Bytes} corresponding to the [Phaser.Display.Color](https://photonstorm.github.io/phaser3-docs/Phaser.Display.Color.html)
+ * instance, in RGBA order.
+ * @internal
  */
 export function getBytesFromColor(color: Phaser.Display.Color): Bytes {
   return new Uint8Array([color.red, color.green, color.blue, color.alpha]);
@@ -134,11 +144,12 @@ export function getBytesFromColor(color: Phaser.Display.Color): Bytes {
 
 /**
  * Get [Phaser.Display.Color](https://photonstorm.github.io/phaser3-docs/Phaser.Display.Color.html)
- * instance from bytes, in RGBA order.
- * @param bytes Uint8Array reference.
+ * instance from {@link Bytes}, in RGBA order.
+ * @param bytes The {@link Bytes} to read.
  * @returns [Phaser.Display.Color](https://photonstorm.github.io/phaser3-docs/Phaser.Display.Color.html)
- * instance corresponding to bytes.
- * @throws Error if bytes length is not 3 or 4.
+ * instance corresponding to {@link Bytes}.
+ * @throws Error if {@link Bytes} length is not 3 or 4.
+ * @internal
  */
 export function getColorFromBytes(bytes: Bytes) {
   const len = bytes.length;
@@ -157,7 +168,8 @@ export function getColorFromBytes(bytes: Bytes) {
  * @returns [Phaser.Display.Color](https://photonstorm.github.io/phaser3-docs/Phaser.Display.Color.html)
  * instance corresponding to hex string.
  * @throws Error if hex string contains invalid characters or has odd length or
- * results in a value with byte length that is not 3 or 4.
+ * results in a value with {@link Bytes} length that is not 3 or 4.
+ * @internal
  */
 export function getColorFromHexString(hex: string) {
   return getColorFromBytes(getBytesFromHexString(hex));
@@ -166,12 +178,13 @@ export function getColorFromHexString(hex: string) {
 /**
  * Get CSS color string in specified notation from [Phaser.Display.Color](https://photonstorm.github.io/phaser3-docs/Phaser.Display.Color.html)
  * instance.
- * @param notation CSS color notation.
+ * @param notation {@link CssColorNotation CSS color notation}.
  * @param color [Phaser.Display.Color](https://photonstorm.github.io/phaser3-docs/Phaser.Display.Color.html)
  * instance.
- * @returns CSS color string corresponding to specified notation &
- * [Phaser.Display.Color](https://photonstorm.github.io/phaser3-docs/Phaser.Display.Color.html)
+ * @returns CSS color string corresponding to specified {@link CssColorNotation notation}
+ * & [Phaser.Display.Color](https://photonstorm.github.io/phaser3-docs/Phaser.Display.Color.html)
  * instance.
+ * @internal
  */
 export function getCssColorStringFromColor(notation: CssColorNotation, color: Phaser.Display.Color) {
   const prop = notation === 'functional' ? 'rgb' : 'hex';
@@ -185,6 +198,7 @@ export function getCssColorStringFromColor(notation: CssColorNotation, color: Ph
  * instance.
  * @returns Hex string corresponding to [Phaser.Display.Color](https://photonstorm.github.io/phaser3-docs/Phaser.Display.Color.html)
  * instance, in RGBA order.
+ * @internal
  */
 export function getHexStringFromColor(color: Phaser.Display.Color) {
   return getHexStringFromBytes(getBytesFromColor(color));
@@ -224,16 +238,19 @@ export type FontWeight =
 
 /**
  * Default font style.
+ * @internal
  */
 export const defaultFontStyle = 'normal';
 
 /**
  * Default font variant.
+ * @internal
  */
 export const defaultFontVariant = 'normal';
 
 /**
  * Default font weight.
+ * @internal
  */
 export const defaultFontWeight = 'normal';
 
@@ -242,29 +259,29 @@ export const defaultFontWeight = 'normal';
  */
 export class Font {
   /**
-   * Clone provided font.
-   * @param font Font to clone.
-   * @returns Cloned font.
+   * Clone provided {@link Font}.
+   * @param font {@link Font} to clone.
+   * @returns Cloned {@link Font}.
    */
   static clone(font: Font): Font {
     return new Font(font.size, font.family, font.weight, font.style, font.variant);
   }
 
   /**
-   * Get font as CSS value string.
+   * Get full CSS font value.
    */
   get css() {
     return `${this.style} ${this.variant} ${this.weight} ${this.size}px ${this.family}`;
   }
 
   /**
-   * Instantiate font.
+   * Instantiate {@link Font}.
    *
    * @param size Font size.
    * @param family Font family.
-   * @param weight (Default: 'normal') Font weight.
-   * @param style (Default: 'normal') Font style.
-   * @param variant (Default: 'normal') Font variant.
+   * @param weight (Default: 'normal') {@link FontWeight Font weight}.
+   * @param style (Default: 'normal') {@link FontStyle Font style}.
+   * @param variant (Default: 'normal') {@link FontVariant Font variant}.
    */
   constructor(
     public size: number,
@@ -280,8 +297,8 @@ export class Font {
   }
 
   /**
-   * Get a string representation of a font object.
-   * @returns A string representing the font object.
+   * Get a string representation of the {@link Font} instance.
+   * @returns A string representing the {@link Font} instance.
    */
   toString() {
     return `Font: ${this.css}`;
@@ -297,6 +314,7 @@ export class Font {
  * @param value Number to round.
  * @param decimal Number of decimal places to keep.
  * @returns Number rounded to specified number of decimal places.
+ * @internal
  */
 export function roundToDecimal(value: number, decimal: number) {
   return +(Math.round((value + `e+${decimal}`) as unknown as number) + `e-${decimal}`);
