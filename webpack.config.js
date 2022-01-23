@@ -15,7 +15,7 @@ const offValues = ['false', false, '0', 0, 'off'];
 
 const canvasRenderer = offValues.includes(process.env.CANVAS_RENDERER) ? false : true;
 const webglRenderer = offValues.includes(process.env.WEBGL_RENDERER) ? false : true;
-const demos = onValues.includes(process.env.DEMOS) ? true : false;
+const demo = onValues.includes(process.env.DEMO) ? true : false;
 
 if (!canvasRenderer && !webglRenderer) {
   throw new Error('At least one renderer must be enabled');
@@ -23,7 +23,7 @@ if (!canvasRenderer && !webglRenderer) {
 
 const srcPath = resolve(__dirname, 'src');
 const dstPath = resolve(__dirname, 'dist');
-const demosPath = resolve(__dirname, 'demos');
+const demoPath = resolve(__dirname, 'demo');
 
 let outputFilename = 'main.bundle.js';
 
@@ -33,27 +33,27 @@ if (!canvasRenderer) {
   outputFilename = 'main-webgl.bundle.js';
 }
 
-if (demos) {
-  outputFilename = 'demos.bundle.js';
+if (demo) {
+  outputFilename = 'demo.bundle.js';
 }
 
 module.exports = {
   mode: isProd ? 'production' : 'development',
   devtool: isProd ? 'hidden-source-map' : 'source-map',
   entry: {
-    main: `${demos ? demosPath : srcPath}/index.ts`
+    main: `${demo ? demoPath : srcPath}/index.ts`
   },
   output: {
     filename: outputFilename,
-    path: dstPath + (demos ? '/demos' : ''),
-    library: demos
+    path: dstPath + (demo ? '/demo' : ''),
+    library: demo
       ? undefined
       : {
           name: 'Phaser3GlyphPlugin',
           type: 'umd'
         }
   },
-  externals: demos ? undefined : /^(phaser.*)$/,
+  externals: demo ? undefined : /^(phaser.*)$/,
   resolve: {
     extensions: ['.ts', '.js']
   },
@@ -65,12 +65,12 @@ module.exports = {
           {
             loader: 'ts-loader',
             options: {
-              configFile: demos ? 'demos/tsconfig.json' : 'tsconfig.build.json'
+              configFile: demo ? 'demo/tsconfig.json' : 'tsconfig.build.json'
             }
           },
           'source-map-loader'
         ],
-        include: demos ? [srcPath, demosPath] : srcPath,
+        include: demo ? [srcPath, demoPath] : srcPath,
         exclude: /node_modules/
       },
       {
@@ -108,10 +108,10 @@ module.exports = {
       'typeof CANVAS_RENDERER': JSON.stringify(canvasRenderer),
       'typeof WEBGL_RENDERER': JSON.stringify(webglRenderer)
     }),
-    demos
+    demo
       ? new HtmlWebpackPlugin({
           title: 'Phaser 3 Glyph Plugin Demos',
-          template: `!!ejs-loader?{"esModule":false}!${demosPath}/index.html`,
+          template: `!!ejs-loader?{"esModule":false}!${demoPath}/index.html`,
           filename: 'index.html',
           inject: 'body',
           minify: {
@@ -127,20 +127,20 @@ module.exports = {
           },
           meta: {
             viewport: 'user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0',
-            description: 'Phaser 3 Glyph Plugin demos.',
+            description: 'Phaser 3 Glyph Plugin demo.',
             version: 'latest'
           }
         })
       : undefined,
-    demos
+    demo
       ? new CopyWebpackPlugin({
-          patterns: [{ from: `${demosPath}/assets`, to: 'assets' }]
+          patterns: [{ from: `${demoPath}/assets`, to: 'assets' }]
         })
       : undefined
   ].filter(Boolean),
   devServer: {
     static: {
-      directory: demosPath,
+      directory: demoPath,
       publicPath: '/'
     },
     host: 'localhost',

@@ -1,0 +1,104 @@
+<h3>Demo</h3>
+
+<p>Use the pointer/mouse to move the player & interact with the world.</p>
+<p>The controls below can alter various glyph rendering characteristics.</p>
+
+<form>
+	<fieldset>
+		<legend>Font</legend>
+
+		<table>
+			<tr>
+				<td><label for="fontSizeInput">Size</label></td>
+				<td><input type="number" id="fontSizeInput" name="fontSize" min="1" max="48" size="3" /></td>
+			</tr>
+
+			<tr>
+				<td><label for="fontFamilyInput">Family</label></td>
+				<td><textarea id="fontFamilyInput" name="fontFamily" rows="2" , cols="20"></textarea></td>
+			</tr>
+
+			<tr>
+				<td><label for="fontWeightSelect">Weight</label></td>
+				<td>
+					<select id="fontWeightSelect" name="fontWeight">
+						<option value="normal">Normal</option>
+						<option value="bold">Bold</option>
+						<option value="bolder">Bolder</option>
+						<option value="lighter">Lighter</option>
+						<option value="100">100</option>
+						<option value="200">200</option>
+						<option value="300">300</option>
+						<option value="400">400</option>
+						<option value="500">500</option>
+						<option value="600">600</option>
+						<option value="700">700</option>
+						<option value="800">800</option>
+						<option value="900">900</option>
+					</select>
+				</td>
+			</tr>
+
+			<tr>
+				<td><label for="fontStyleSelect">Style</label></td>
+				<td>
+					<select id="fontStyleSelect" name="fontStyle">
+						<option value="normal">Normal</option>
+						<option value="italic">Italic</option>
+						<option value="oblique">Oblique</option>
+					</select>
+				</td>
+			</tr>
+
+			<tr>
+				<td><label for="fontVariantSelect">Variant</label></td>
+				<td>
+					<select id="fontVariantSelect" name="fontVariant">
+						<option value="normal">Normal</option>
+						<option value="small-caps">Small-Caps</option>
+					</select>
+				</td>
+			</tr>
+		</table>
+	</fieldset>
+
+	<br />
+
+	<fieldset>
+		<legend>Options</legend>
+
+		<table>
+			<tr>
+				<td><label for="forceSquareRatioCheckBox">Force Square Ratio?</label></td>
+				<td><input type="checkbox" id="forceSquareRatioCheckBox" name="forceSquareRatio" /></td>
+			</tr>
+
+			<tr>
+				<td><label for="measurementChInput">Measurement Character</label></td>
+				<td><input type="text" id="measurementChInput" name="measurementCh" size="1" /></td>
+			</tr>
+
+			<tr>
+				<td><label for="advancedTextMetricsCheckBox">Advanced Text Metrics?</label></td>
+				<td><input type="checkbox" id="advancedTextMetricsCheckBox" name="advancedTextMetrics" /></td>
+			</tr>
+
+			<tr>
+				<td><label for="rendererSelect">Renderer</label></td>
+				<td>
+					<select id="rendererSelect" name="renderer">
+						<option value="auto">Auto</option>
+						<option value="canvas">Canvas</option>
+						<option value="webgl">WebGL</option>
+					</select>
+				</td>
+			</tr>
+		</table>
+	</fieldset>
+
+	<br />
+
+	<fieldset>
+		<button id="updateButton">Update</button>
+	</fieldset>
+</form>
