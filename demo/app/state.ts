@@ -12,11 +12,13 @@ export interface Entity {
 }
 
 export interface State {
+  turnsCompleted: number;
   ids: number[];
   entities: Record<number, Entity>;
 }
 
 export const defaultState: State = {
+  turnsCompleted: 0,
   ids: [0, 1, 2, 3, 4],
   entities: {
     0: {

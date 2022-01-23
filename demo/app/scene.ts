@@ -2,7 +2,7 @@ import type { GlyphLike, GlyphmapGameObject } from '../../src';
 import { Font, GlyphGameObject, GlyphPlugin } from '../../src';
 
 import { Entity, EntityType } from './state';
-import { getAppStartParams } from './utils';
+import { encodeState, getAppStartParams } from './utils';
 
 const renderableData = {
   player: ['@', '#FFF'] as GlyphLike,
@@ -94,8 +94,10 @@ export class Scene extends GlyphPlugin.GlyphScene('glyph', class extends Phaser.
 
     Phaser.Display.Align.In.Center(this.demoToolsDom, this.domZone);
 
+    document.getElementById('stateInput').setAttribute('value', encodeState(appStartParams.state));
+
     document.getElementById('fontSizeInput').setAttribute('value', this.font.size.toString());
-    document.getElementById('fontFamilyInput').innerText = this.font.family; // .setAttribute('value', this.font.family);
+    document.getElementById('fontFamilyInput').innerText = this.font.family;
 
     for (const option of document.getElementById('fontWeightSelect').getElementsByTagName('option')) {
       if (option.value === this.font.weight) {
@@ -236,14 +238,25 @@ export class Scene extends GlyphPlugin.GlyphScene('glyph', class extends Phaser.
   }
 
   private createPointerCellMarker() {
-    this.pointerCellMarker = this.add.graphics();
+    this.pointerCellMarker = this.add.graphics({
+      x: this.glyphmap.cellToWorldX(0),
+      y: this.glyphmap.cellToWorldY(0)
+    });
+
     return this.updatePointerCellMarkerStroke();
   }
 
   private updatePointerCellMarkerPosition() {
     const worldPoint = this.input.activePointer.positionToCamera(this.cameras.main) as Phaser.Math.Vector2;
+    const mapBounds = this.glyphmap.getBounds();
 
-    if (!this.glyphmap.getBounds().contains(worldPoint.x, worldPoint.y)) {
+    if (
+      // mapBounds.contains(worldPoint.x, worldPoint.y) has edge case with right & bottom.
+      worldPoint.x < mapBounds.left ||
+      worldPoint.x >= mapBounds.right ||
+      worldPoint.y < mapBounds.top ||
+      worldPoint.y >= mapBounds.bottom
+    ) {
       return;
     }
 
@@ -258,10 +271,10 @@ export class Scene extends GlyphPlugin.GlyphScene('glyph', class extends Phaser.
     return this;
   }
 
-  private updatePointerCellMarkerStroke() {
+  private updatePointerCellMarkerStroke(lineWidth = 2, color = 0xffff00, alpha = 1) {
     this.pointerCellMarker
       .clear()
-      .lineStyle(2, 0xffff00, 1)
+      .lineStyle(lineWidth, color, alpha)
       .strokeRect(
         0,
         0,

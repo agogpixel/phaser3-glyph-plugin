@@ -52,7 +52,16 @@ export function getAppStartParams() {
   const advancedTextMetrics =
     typeof rawParams.advancedTextMetrics !== 'string' || rawParams.advancedTextMetrics !== 'on' ? false : true;
 
-  const state: State = JSON.parse(JSON.stringify(defaultState));
+  let state: State = JSON.parse(JSON.stringify(defaultState));
+
+  if (typeof rawParams.state === 'string') {
+    try {
+      state = decodeState(rawParams.state);
+    } catch (e) {
+      console.error(e);
+      console.warn('Falling back to default state');
+    }
+  }
 
   appStartParams = {
     type: renderer === 'auto' ? Phaser.AUTO : renderer === 'canvas' ? Phaser.CANVAS : Phaser.WEBGL,
@@ -68,4 +77,26 @@ export function getAppStartParams() {
   } as const;
 
   return appStartParams;
+}
+
+export function encodeState(state: State) {
+  return btoa(JSON.stringify(state));
+}
+
+export function decodeState(base64: string) {
+  const state = JSON.parse(atob(base64)) as State;
+
+  // Sanitation.
+  if (
+    !state ||
+    typeof state !== 'object' ||
+    typeof state.turnsCompleted !== 'number' ||
+    !Array.isArray(state.ids) ||
+    !state.entities ||
+    typeof state.entities !== 'object'
+  ) {
+    throw new Error('Decoded state invalid');
+  }
+
+  return state;
 }

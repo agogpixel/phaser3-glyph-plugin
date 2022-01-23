@@ -36,7 +36,7 @@ export async function phaser() {
     Input: (await import(/* webpackChunkName: "phaser~input" */ 'phaser/src/input')).default,
     Loader: (await import(/* webpackChunkName: "phaser~loader" */ 'phaser/src/loader')).default,
     Math: require('phaser/src/math'),
-    Physics: (await import(/* webpackChunkName: "phaser~physics" */ 'phaser/src/physics')).default,
+    //Physics: (await import(/* webpackChunkName: "phaser~physics" */ 'phaser/src/physics')).default,
     Plugins: require('phaser/src/plugins'),
     Renderer: require('phaser/src/renderer'),
     Scale: require('phaser/src/scale'),
