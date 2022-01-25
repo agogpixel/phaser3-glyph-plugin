@@ -1,9 +1,15 @@
+/**
+ * Entity type enumeration.
+ */
 export enum EntityType {
   Player,
   Jabronie,
   Gold
 }
 
+/**
+ * Entity data model.
+ */
 export interface Entity {
   id: number;
   type: EntityType;
@@ -11,12 +17,18 @@ export interface Entity {
   data?: Record<string, unknown>;
 }
 
+/**
+ * Game state data model.
+ */
 export interface State {
   turnsCompleted: number;
   ids: number[];
   entities: Record<number, Entity>;
 }
 
+/**
+ * Default game state.
+ */
 export const defaultState: State = {
   turnsCompleted: 0,
   ids: [0, 1, 2, 3, 4],

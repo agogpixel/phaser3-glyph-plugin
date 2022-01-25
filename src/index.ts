@@ -22,4 +22,5 @@ export { GlyphPlugin } from './plugins';
 
 export type { CharLike, ColorLike, GlyphLike, GlyphLikeObject, GlyphLikeTuple } from './glyph';
 
+export type { FontStyle, FontVariant, FontWeight } from './utils';
 export { Font } from './utils';

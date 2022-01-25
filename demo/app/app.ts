@@ -3,9 +3,16 @@ import { GlyphPlugin } from '../../src';
 import { Scene } from './scene';
 import { getAppStartParams } from './utils';
 
+// Application start parameters are built from the query string and fallback to
+// defaults as appropriate.
 const appStartParams = getAppStartParams();
 
+/**
+ * Encapsulates game initialization and start.
+ * @returns A [Phaser.Game](https://photonstorm.github.io/phaser3-docs/Phaser.Game.html) reference.
+ */
 export async function app() {
+  // Initialize game with app start parameters.
   return new Phaser.Game({
     type: appStartParams.type,
     parent: 'body',

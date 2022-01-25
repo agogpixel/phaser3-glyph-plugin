@@ -3,7 +3,9 @@
 <p>Use the pointer/mouse to move the player & interact with the world.</p>
 <p>The controls below can alter various glyph rendering characteristics.</p>
 
-<form>
+<form id="demoToolsForm">
+	<input type="hidden" id="stateInput" name="state" />
+
 	<fieldset>
 		<legend>Font</legend>
 
@@ -100,7 +102,8 @@
 
 	<fieldset>
 		<button id="updateButton">Update</button>
+		<br />
+		<label><small>Reload Page?</small></label>
+		<input type="checkbox" id="reloadPageCheckBox" name="reloadPage" />
 	</fieldset>
-
-	<input type="hidden" id="stateInput" name="state" />
 </form>

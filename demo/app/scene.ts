@@ -1,7 +1,8 @@
-import type { GlyphLike, GlyphmapGameObject } from '../../src';
+import type { FontStyle, FontVariant, FontWeight, GlyphLike, GlyphmapGameObject } from '../../src';
 import { Font, GlyphGameObject, GlyphPlugin } from '../../src';
 
-import { Entity, EntityType } from './state';
+import type { Entity, State } from './state';
+import { EntityType } from './state';
 import { encodeState, getAppStartParams } from './utils';
 
 const renderableData = {
@@ -30,6 +31,8 @@ const terrainMap = [
 const appStartParams = getAppStartParams();
 
 export class Scene extends GlyphPlugin.GlyphScene('glyph', class extends Phaser.Scene {}) {
+  state: State = JSON.parse(JSON.stringify(appStartParams.state));
+
   font = new Font(
     appStartParams.fontSize,
     appStartParams.fontFamily,
@@ -94,9 +97,55 @@ export class Scene extends GlyphPlugin.GlyphScene('glyph', class extends Phaser.
 
     Phaser.Display.Align.In.Center(this.demoToolsDom, this.domZone);
 
-    document.getElementById('stateInput').setAttribute('value', encodeState(appStartParams.state));
+    document.getElementById('demoToolsForm').onsubmit = (e: SubmitEvent) => {
+      const data = Object.fromEntries(new FormData(e.target as never).entries());
+
+      if (data.reloadPage === 'on') {
+        return true;
+      }
+
+      this.font.size = parseInt(data.fontSize as string);
+      this.font.family = data.fontFamily as string;
+      this.font.weight = data.fontWeight as FontWeight;
+      this.font.style = data.fontStyle as FontStyle;
+      this.font.variant = data.fontVariant as FontVariant;
+
+      this.glyph.setProperties({
+        advancedTextMetrics: data.advancedTextMetrics === 'on',
+        measurementCodePoint: data.measurementCh as string
+      });
+
+      const forceSquareRatio = data.forceSquareRatio === 'on';
+
+      this.glyphmap.setFont(this.font).setForceSquareRatio(forceSquareRatio);
+      Phaser.Display.Align.In.Center(this.glyphmap, this.playZone);
+
+      const [playerCellX, playerCellY] = this.getPlayerEntity().position;
+      this.player
+        .setFont(this.font)
+        .setForceSquareRatio(forceSquareRatio)
+        .setX(this.glyphmap.cellToWorldX(playerCellX, 0.5))
+        .setY(this.glyphmap.cellToWorldY(playerCellY, 0.5));
+
+      const jabronieEntities = this.getJabronieEntities();
+      this.jabronies.children.each((j: GlyphGameObject) => {
+        const data = jabronieEntities.find((entity) => j.name === `${entity.id}`);
+        const [jabronieCellX, jabronieCellY] = data.position;
+        j.setFont(this.font)
+          .setForceSquareRatio(forceSquareRatio)
+          .setX(this.glyphmap.cellToWorldX(jabronieCellX, 0.5))
+          .setY(this.glyphmap.cellToWorldY(jabronieCellY, 0.5));
+      }, this);
+
+      this.updatePointerCellMarkerStroke();
+
+      return false;
+    };
+
+    document.getElementById('stateInput').setAttribute('value', encodeState(this.state));
 
     document.getElementById('fontSizeInput').setAttribute('value', this.font.size.toString());
+
     document.getElementById('fontFamilyInput').innerText = this.font.family;
 
     for (const option of document.getElementById('fontWeightSelect').getElementsByTagName('option')) {
@@ -140,6 +189,8 @@ export class Scene extends GlyphPlugin.GlyphScene('glyph', class extends Phaser.
       }
     }
 
+    (document.getElementById('reloadPageCheckBox') as HTMLInputElement).checked = appStartParams.reloadPage;
+
     return this;
   }
 
@@ -150,13 +201,7 @@ export class Scene extends GlyphPlugin.GlyphScene('glyph', class extends Phaser.
       createCallback: (g: GlyphGameObject) => g.setForceSquareRatio(this.forceSquareRatio).setFont(this.font)
     });
 
-    const data: Entity[] = [];
-
-    for (const id of appStartParams.state.ids) {
-      if (appStartParams.state.entities[id].type === EntityType.Jabronie) {
-        data.push(appStartParams.state.entities[id]);
-      }
-    }
+    const data = this.getJabronieEntities();
 
     if (!data.length) {
       throw new Error('No jabronie data found');
@@ -192,13 +237,7 @@ export class Scene extends GlyphPlugin.GlyphScene('glyph', class extends Phaser.
 
     Phaser.Display.Align.In.Center(this.glyphmap, this.playZone);
 
-    const data: Entity[] = [];
-
-    for (const id of appStartParams.state.ids) {
-      if (appStartParams.state.entities[id].type === EntityType.Gold) {
-        data.push(appStartParams.state.entities[id]);
-      }
-    }
+    const data = this.getGoldEntities();
 
     data.forEach((d) => {
       const [cellX, cellY] = d.position;
@@ -209,14 +248,7 @@ export class Scene extends GlyphPlugin.GlyphScene('glyph', class extends Phaser.
   }
 
   private createPlayer() {
-    let data: Entity;
-
-    for (const id of appStartParams.state.ids) {
-      if (appStartParams.state.entities[id].type === EntityType.Player) {
-        data = appStartParams.state.entities[id];
-        break;
-      }
-    }
+    const data = this.getPlayerEntity();
 
     if (!data) {
       throw new Error('No player data found');
@@ -244,6 +276,38 @@ export class Scene extends GlyphPlugin.GlyphScene('glyph', class extends Phaser.
     });
 
     return this.updatePointerCellMarkerStroke();
+  }
+
+  private getGoldEntities() {
+    const data: Entity[] = [];
+
+    for (const id of this.state.ids) {
+      if (this.state.entities[id].type === EntityType.Gold) {
+        data.push(this.state.entities[id]);
+      }
+    }
+
+    return data;
+  }
+
+  private getJabronieEntities() {
+    const data: Entity[] = [];
+
+    for (const id of this.state.ids) {
+      if (this.state.entities[id].type === EntityType.Jabronie) {
+        data.push(this.state.entities[id]);
+      }
+    }
+
+    return data;
+  }
+
+  private getPlayerEntity() {
+    for (const id of this.state.ids) {
+      if (this.state.entities[id].type === EntityType.Player) {
+        return this.state.entities[id];
+      }
+    }
   }
 
   private updatePointerCellMarkerPosition() {
