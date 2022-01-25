@@ -79,10 +79,10 @@ Live development with `jest` watch mode:
 npm start
 ```
 
-Live development with demos:
+Live development with demo:
 
 ```shell
-npm run demos
+npm run demo
 ```
 
 Lint files:

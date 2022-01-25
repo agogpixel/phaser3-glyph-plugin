@@ -11,7 +11,7 @@ import * as Extend from 'phaser/src/utils/object/Extend';
 export async function phaser() {
   let Phaser = {
     Actions: require('phaser/src/actions'),
-    Animations: require('phaser/src/animations'),
+    //Animations: require('phaser/src/animations'),
     BlendModes: require('phaser/src/renderer/BlendModes'),
     Cache: require('phaser/src/cache'),
     Cameras: require('phaser/src/cameras'),
@@ -36,7 +36,7 @@ export async function phaser() {
     Input: (await import(/* webpackChunkName: "phaser~input" */ 'phaser/src/input')).default,
     Loader: (await import(/* webpackChunkName: "phaser~loader" */ 'phaser/src/loader')).default,
     Math: require('phaser/src/math'),
-    Physics: (await import(/* webpackChunkName: "phaser~physics" */ 'phaser/src/physics')).default,
+    //Physics: (await import(/* webpackChunkName: "phaser~physics" */ 'phaser/src/physics')).default,
     Plugins: require('phaser/src/plugins'),
     Renderer: require('phaser/src/renderer'),
     Scale: require('phaser/src/scale'),
@@ -48,7 +48,7 @@ export async function phaser() {
       : undefined,
     Structs: require('phaser/src/structs'),
     Textures: require('phaser/src/textures'),
-    Tilemaps: (await import(/* webpackChunkName: "phaser~tilemaps" */ 'phaser/src/tilemaps')).default,
+    //Tilemaps: (await import(/* webpackChunkName: "phaser~tilemaps" */ 'phaser/src/tilemaps')).default,
     Time: require('phaser/src/time'),
     Tweens: require('phaser/src/tweens'),
     Utils: require('phaser/src/utils')

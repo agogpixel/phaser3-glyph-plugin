@@ -1,5 +1,5 @@
 /**
- * Glyphmap game object module.
+ * Glyphmap GameObject module.
  *
  * Derived from {@link https://github.com/photonstorm/phaser/tree/master/src/tilemaps}.
  * @copyright 2020 Photon Storm Ltd.
@@ -16,73 +16,79 @@ declare const CANVAS_RENDERER: unknown;
 
 import { ComputedSize } from '@agogpixel/phaser3-ts-utils/mixins/gameobjects/components/computed-size';
 
-import { GlyphPlugin } from '../plugin';
-import type { Font } from '../shared';
-import { convertHexStringToBuffer, GlyphLike } from '../shared';
+import type { GlyphLike } from '../glyph';
+import { Glyph } from '../glyph';
+import type { GlyphPlugin } from '../plugins';
+import type { Font } from '../utils';
 
 import type {
   GlyphPluginGameObjectCanvasRenderer,
   GlyphPluginGameObjectConfig,
   GlyphPluginGameObjectWebGLRenderer
-} from './glyph-plugin-gameobject';
-import { GlyphPluginGameObject } from './glyph-plugin-gameobject';
+} from './base';
+import { GlyphPluginGameObject } from './base';
+
+////////////////////////////////////////////////////////////////////////////////
+// Factories & Creators
+////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Glyphmap factory type.
+ * {@link GlyphmapGameObject} factory type.
  */
-export type GlyphmapFactory = (
-  ...args: ConstructorParameters<typeof Glyphmap> extends [unknown, ...infer R] ? R : never
-) => Glyphmap;
+export type GlyphmapGameObjectFactory = (
+  ...args: ConstructorParameters<typeof GlyphmapGameObject> extends [unknown, ...infer R] ? R : never
+) => GlyphmapGameObject;
 
 /**
- * Glyphmap creator type.
+ * {@link GlyphmapGameObject} creator type.
  */
-export type GlyphmapCreator = (config?: GlyphmapConfig, addToScene?: boolean) => Glyphmap;
+export type GlyphmapGameObjectCreator = (config?: GlyphmapGameObjectConfig, addToScene?: boolean) => GlyphmapGameObject;
 
 /**
- * Glyphmap creator configuration.
+ * {@link GlyphmapGameObject} creator configuration.
  */
-export interface GlyphmapConfig extends GlyphPluginGameObjectConfig {
+export interface GlyphmapGameObjectConfig extends GlyphPluginGameObjectConfig {
   /**
-   * Width in glyph cells.
+   * Width in cells.
    */
   width?: number;
 
   /**
-   * Height in glyph cells.
+   * Height in cells.
    */
   height?: number;
 }
 
 /**
- * Glyphmap factory.
- * @param this Phaser GameObject factory.
- * @param args Glyphmap instantiation arguments.
- * @returns Glyphmap instance.
+ * {@link GlyphmapGameObject} factory.
+ * @param this [Phaser.GameObjects.GameObjectFactory](https://photonstorm.github.io/phaser3-docs/Phaser.GameObjects.GameObjectFactory.html).
+ * @param args {@link GlyphmapGameObject} instantiation arguments.
+ * @returns A {@link GlyphmapGameObject} instance.
  * @internal
  */
-export const glyphmapFactory: GlyphmapFactory = function glyphmapFactory(
+export const glyphmapGameObjectFactory: GlyphmapGameObjectFactory = function glyphmapGameObjectFactory(
   this: Phaser.GameObjects.GameObjectFactory,
   ...args
 ) {
-  return this.displayList.add(new Glyphmap(this.scene, ...args)) as Glyphmap;
+  return this.displayList.add(new GlyphmapGameObject(this.scene, ...args)) as GlyphmapGameObject;
 };
 
 /**
- * Glyphmap creator.
- * @param this Phaser GameObject creator.
- * @param config Glyphmap creator configuration.
- * @param addToScene Add this Game Object to the Scene after creating it? If set
- * this argument overrides the `add` property in the config object.
- * @returns Glyphmap instance.
+ * {@link GlyphmapGameObject} creator.
+ * @param this [Phaser.GameObjects.GameObjectFactory](https://photonstorm.github.io/phaser3-docs/Phaser.GameObjects.GameObjectFactory.html).
+ * @param config {@link GlyphmapGameObjectConfig}.
+ * @param addToScene Add this {@link GlyphmapGameObject} to the [Phaser.Scene](https://photonstorm.github.io/phaser3-docs/Phaser.Scene.html)
+ * after creating it? If set this argument overrides the `add` property in the
+ * {@link GlyphmapGameObjectConfig}.
+ * @returns A {@link GlyphmapGameObject} instance.
  * @internal
  */
-export const glyphmapCreator: GlyphmapCreator = function glyphmapCreator(
+export const glyphmapGameObjectCreator: GlyphmapGameObjectCreator = function glyphmapGameObjectCreator(
   this: Phaser.GameObjects.GameObjectCreator,
-  config: GlyphmapConfig = {},
+  config: GlyphmapGameObjectConfig = {},
   addToScene?: boolean
 ) {
-  const glyphmap = new Glyphmap(
+  const glyphmap = new GlyphmapGameObject(
     this.scene,
     0,
     0,
@@ -102,6 +108,10 @@ export const glyphmapCreator: GlyphmapCreator = function glyphmapCreator(
   return glyphmap;
 };
 
+////////////////////////////////////////////////////////////////////////////////
+// Renderers
+////////////////////////////////////////////////////////////////////////////////
+
 /**
  * Used for cull bounds pass.
  * @internal
@@ -110,12 +120,14 @@ const bounds = new Phaser.Geom.Rectangle();
 
 /**
  * Get cull bounds to potentially reduce number of cells that require rendering.
- * @param map Glyphmap instance.
- * @param camera Camera instance.
- * @returns Rectangular bounds of glyphmap that should be rendered.
+ * @param map {@link GlyphmapGameObject} instance.
+ * @param camera [Phaser.Cameras.Scene2D.Camera](https://photonstorm.github.io/phaser3-docs/Phaser.Cameras.Scene2D.Camera.html)
+ * instance.
+ * @returns Rectangular bounds of {@link GlyphmapGameObject} that should be
+ * rendered.
  * @internal
  */
-function getCullBounds(map: Glyphmap, camera: Phaser.Cameras.Scene2D.Camera) {
+function getCullBounds(map: GlyphmapGameObject, camera: Phaser.Cameras.Scene2D.Camera) {
   if (map.skipCull || map.scrollFactorX !== 1 || map.scrollFactorY !== 1) {
     return bounds.setTo(0, 0, map.widthInCells, map.heightInCells);
   }
@@ -133,16 +145,16 @@ function getCullBounds(map: Glyphmap, camera: Phaser.Cameras.Scene2D.Camera) {
 }
 
 /**
- * Glyphmap WebGL renderer.
+ * {@link GlyphmapGameObject} WebGL renderer.
  * @internal
  */
-let renderWebGL: GlyphPluginGameObjectWebGLRenderer<Glyphmap> = Phaser.Utils.NOOP;
+let renderWebGL: GlyphPluginGameObjectWebGLRenderer<GlyphmapGameObject> = Phaser.Utils.NOOP;
 
 /**
- * Glyphmap canvas renderer.
+ * {@link GlyphmapGameObject} canvas renderer.
  * @internal
  */
-let renderCanvas: GlyphPluginGameObjectCanvasRenderer<Glyphmap> = Phaser.Utils.NOOP;
+let renderCanvas: GlyphPluginGameObjectCanvasRenderer<GlyphmapGameObject> = Phaser.Utils.NOOP;
 
 if (typeof WEBGL_RENDERER) {
   renderWebGL = (renderer, src, camera) => {
@@ -183,7 +195,7 @@ if (typeof WEBGL_RENDERER) {
 
     const mapData = src['mapData'];
     const glyphset = src['glyphset'];
-    const getKey = Glyphmap['getKey'];
+    const getKey = GlyphmapGameObject['getKey'];
 
     renderer.pipelines.preBatch(src);
 
@@ -315,7 +327,7 @@ if (typeof CANVAS_RENDERER) {
 
     const mapData = src['mapData'];
     const glyphset = src['glyphset'];
-    const getKey = Glyphmap['getKey'];
+    const getKey = GlyphmapGameObject['getKey'];
 
     for (let y = cullBoundsY; y < cullBoundsEndY; ++y) {
       for (let x = cullBoundsX; x < cullBoundsEndX; ++x) {
@@ -355,46 +367,52 @@ if (typeof CANVAS_RENDERER) {
   };
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// GlyphmapGameObject Definition
+////////////////////////////////////////////////////////////////////////////////
+
 /**
- * Glyphmap Game Object. Displays glyph data as a grid.
+ * Glyphmap GameObject.
  */
-export class Glyphmap extends ComputedSize(class extends GlyphPluginGameObject {}) {
+export class GlyphmapGameObject extends ComputedSize(class extends GlyphPluginGameObject {}) {
   /**
    * Get position key from coordinates.
    * @param x X-coordinate.
    * @param y Y-coordinate.
    * @returns String of the form `X,Y`.
+   * @internal
    */
   private static getKey(x: number, y: number) {
     return `${x},${y}`;
   }
 
   /**
-   * Height of map in glyph cells.
+   * Height of {@link GlyphmapGameObject} in cells.
    */
   readonly heightInCells: number;
 
   /**
-   * Width of map in glyph cells.
+   * Width of {@link GlyphmapGameObject} in cells.
    */
   readonly widthInCells: number;
 
   /**
-   * The amount of extra glyph cells to add into the cull bounds when
-   * calculating its horizontal size.
+   * The amount of extra cells to add into the cull bounds when calculating its
+   * horizontal size.
    * @see {@link Glyphmap.setCullPadding}
    */
   cullPaddingX = 1;
 
   /**
-   * The amount of extra glyph cells to add into the cull bounds when
-   * calculating its vertical size.
+   * The amount of extra cells to add into the cull bounds when calculating its
+   * vertical size.
    * @see {@link Glyphmap.setCullPadding}
    */
   cullPaddingY = 1;
 
   /**
-   * Control if a camera should cull glyph cells before rendering them or not.
+   * Control if a [Phaser.Cameras.Scene2D.Camera](https://photonstorm.github.io/phaser3-docs/Phaser.Cameras.Scene2D.Camera.html)
+   * should cull cells before rendering them or not.
    * @see {@link Glyphmap.setSkipCull}
    */
   skipCull = false;
@@ -414,59 +432,57 @@ export class Glyphmap extends ComputedSize(class extends GlyphPluginGameObject {
   readonly renderWebGL = renderWebGL;
 
   /**
-   * Refresh glyphmap dimensions & textures.
-   * @returns Glyphmap instance for further chaining.
-   * @protected
-   */
-  readonly refresh = () => this.updateDimensions().updateTextures();
-
-  /**
-   * Dynamically track & manage glyph textures.
+   * Dynamically track & manage textures in use.
+   * @see {@link Glyphset}
+   * @internal
    */
   private readonly glyphset = new Glyphset();
 
   /**
-   * Glyphmap data, mapping position key to glyph texture ids.
+   * Map position key to {@link Glyphset} texture ids.
+   * @internal
    */
   private readonly mapData = new Map<string, number[]>();
 
   /**
-   * Track current glyph cell height, in pixels.
+   * Track current cell height, in pixels.
+   * @internal
    */
   private currentCellHeight: number;
 
   /**
-   * Track current glyph cell width, in pixels.
+   * Track current cell width, in pixels.
+   * @internal
    */
   private currentCellWidth: number;
 
   /**
-   * Get glyph cell width, in pixels.
+   * Get cell width, in pixels.
    */
   get cellWidth() {
     return this.currentCellWidth;
   }
 
   /**
-   * Get glyph cell height, in pixels.
+   * Get cell height, in pixels.
    */
   get cellHeight() {
     return this.currentCellHeight;
   }
 
   /**
-   * Instantiate glyphmap game object.
+   * Instantiate {@link GlyphmapGameObject}.
    *
-   * @param scene The Scene to which this Game Object belongs.
+   * @param scene The [Phaser.Scene](https://photonstorm.github.io/phaser3-docs/Phaser.Scene.html)
+   * to which this {@link GlyphmapGameObject}.
    * @param x (Default: 0) World X-coordinate.
    * @param y (Default: 0) World Y-coordinate.
-   * @param width (Default: 80) Width in glyph cells.
-   * @param height (Default: 25) Height in glyph cells.
-   * @param font (Optional) Font to use.
-   * @param forceSquareRatio (Optional) Force square glyph frames/cells,
-   * using the greater of width or height of the associated glyph plugin's
-   * measurement character.
-   * @param pluginKey (Optional) Glyph plugin key.
+   * @param width (Default: 80) Width in cells.
+   * @param height (Default: 25) Height in cells.
+   * @param font (Default: 'normal normal normal 24px "Lucida Console", Courier, monospace')
+   * {@link Font} to use.
+   * @param forceSquareRatio (Default: false) Force square cells.
+   * @param pluginKey (Optional) {@link GlyphPlugin} key.
    */
   constructor(
     scene: Phaser.Scene,
@@ -487,11 +503,12 @@ export class Glyphmap extends ComputedSize(class extends GlyphPluginGameObject {
   }
 
   /**
-   * Converts from glyph cell X-coordinate to world X-coordinate (pixels),
-   * factoring in the glyphmap's position, scale and scroll.
-   * @param cellX Glyph cell X-coordinate.
-   * @param originX (Default: 0) Glyph cell horizontal origin [0..1].
-   * @param camera (Optional) Camera to use.
+   * Converts from cell X-coordinate to world X-coordinate (pixels),
+   * factoring in the {@link GlyphmapGameObject}'s position, scale and scroll.
+   * @param cellX Cell X-coordinate.
+   * @param originX (Default: 0) Cell horizontal origin [0..1].
+   * @param camera (Optional) [Phaser.Cameras.Scene2D.Camera](https://photonstorm.github.io/phaser3-docs/Phaser.Cameras.Scene2D.Camera.html)
+   * to use.
    * @returns World X-coordinate corresponding to specified cell X-coordinate.
    */
   cellToWorldX(cellX: number, originX = 0, camera?: Phaser.Cameras.Scene2D.Camera) {
@@ -503,15 +520,18 @@ export class Glyphmap extends ComputedSize(class extends GlyphPluginGameObject {
     // camera's horizontal scroll.
     const worldX = this.getTopLeft().x + camera.scrollX * (1 - this.scrollFactorX);
 
+    originX = originX || 0; // Handle null.
+
     return worldX + cellX * cellWidth + originX * cellWidth;
   }
 
   /**
-   * Converts from glyph cell Y-coordinate to world Y-coordinate (pixels),
-   * factoring in the glyphmap's position, scale and scroll.
-   * @param cellY Glyph cell Y-coordinate.
-   * @param originY (Default: 0) Glyph cell vertical origin [0..1].
-   * @param camera (Optional) Camera to use.
+   * Converts from cell Y-coordinate to world Y-coordinate (pixels),
+   * factoring in the {@link GlyphmapGameObject}'s position, scale and scroll.
+   * @param cellY Cell Y-coordinate.
+   * @param originY (Default: 0) Cell vertical origin [0..1].
+   * @param camera (Optional) [Phaser.Cameras.Scene2D.Camera](https://photonstorm.github.io/phaser3-docs/Phaser.Cameras.Scene2D.Camera.html)
+   * to use.
    * @returns World Y-coordinate corresponding to specified cell Y-coordinate.
    */
   cellToWorldY(cellY: number, originY = 0, camera?: Phaser.Cameras.Scene2D.Camera) {
@@ -523,29 +543,35 @@ export class Glyphmap extends ComputedSize(class extends GlyphPluginGameObject {
     // camera's vertical scroll.
     const worldY = this.getTopLeft().y + camera.scrollY * (1 - this.scrollFactorY);
 
+    originY = originY || 0; // Handle null.
+
     return worldY + cellY * cellHeight + originY * cellHeight;
   }
 
   /**
-   * Converts from glyph cell X,Y coordinates to world X,Y coordinates (pixels),
-   * factoring in the glyphmap's position, scale and scroll.
-   * @param cellX Glyph cell X-coordinate.
-   * @param cellY Glyph cell Y-coordinate.
-   * @param originX (Default: 0) Glyph cell horizontal origin [0..1].
-   * @param originY (Default: 0) Glyph cell vertical origin [0..1].
-   * @param camera (Optional) Camera to use.
+   * Converts from cell X,Y coordinates to world X,Y coordinates (pixels),
+   * factoring in the {@link GlyphmapGameObject}'s position, scale and scroll.
+   * @param cellX Cell X-coordinate.
+   * @param cellY Cell Y-coordinate.
+   * @param originX (Default: 0) Cell horizontal origin [0..1].
+   * @param originY (Default: originX) Cell vertical origin [0..1].
+   * @param camera (Optional) [Phaser.Cameras.Scene2D.Camera](https://photonstorm.github.io/phaser3-docs/Phaser.Cameras.Scene2D.Camera.html)
+   * to use.
    * @returns World X,Y coordinates tuple corresponding to specified cell X,Y
    * coordinates.
    */
-  cellToWorldXY(cellX: number, cellY: number, originX = 0, originY = 0, camera?: Phaser.Cameras.Scene2D.Camera) {
+  cellToWorldXY(cellX: number, cellY: number, originX = 0, originY?: number, camera?: Phaser.Cameras.Scene2D.Camera) {
+    originX = originX || 0; // Handle null.
+    originY = typeof originY !== 'number' ? originX : originY;
+
     return [this.cellToWorldX(cellX, originX, camera), this.cellToWorldY(cellY, originY, camera)] as [number, number];
   }
 
   /**
-   * Check that specified glyph cell coordinates are within the glyphmap's
-   * bounds.
-   * @param x Glyph cell X-coordinate.
-   * @param y Glyph cell Y-coordinate.
+   * Check that specified cell coordinates are within the
+   * {@link GlyphmapGameObject}'s bounds.
+   * @param x Cell X-coordinate.
+   * @param y Cell Y-coordinate.
    * @returns True if in bounds, false otherwise.
    */
   checkBounds(x: number, y: number) {
@@ -553,8 +579,8 @@ export class Glyphmap extends ComputedSize(class extends GlyphPluginGameObject {
   }
 
   /**
-   * Clear all glyph data & textures from the glyphmap.
-   * @returns Glyphmap instance for further chaining.
+   * Clear all data & textures from the {@link GlyphmapGameObject}.
+   * @returns The {@link GlyphmapGameObject} instance for further chaining.
    */
   clear() {
     this.mapData.clear();
@@ -563,13 +589,13 @@ export class Glyphmap extends ComputedSize(class extends GlyphPluginGameObject {
   }
 
   /**
-   * Erase glyphs at specified cell position.
+   * Erase data at specified cell position.
    * @param x Cell X-coordinate.
    * @param y Cell Y-coordinate.
-   * @returns Glyphmap instance for further chaining.
+   * @returns The {@link GlyphmapGameObject} instance for further chaining.
    */
   erase(x: number, y: number) {
-    const key = Glyphmap.getKey(x, y);
+    const key = GlyphmapGameObject.getKey(x, y);
 
     if (!this.mapData.has(key)) {
       return this;
@@ -582,22 +608,22 @@ export class Glyphmap extends ComputedSize(class extends GlyphPluginGameObject {
   }
 
   /**
-   * Destroy glyphmap & resources.
-   * @param fromScene (Default: false) Is Game Object is being destroyed by the
-   * Scene?
+   * Destroy {@link GlyphmapGameObject} & resources.
+   * @param fromScene (Default: false) Destroyed by the
+   * [Phaser.Scene](https://photonstorm.github.io/phaser3-docs/Phaser.Scene.html)?
    */
   destroy(fromScene?: boolean) {
     super.destroy(fromScene);
   }
 
   /**
-   * Draw glyphs at specified cell position. Overwrites any previous glyphs
-   * drawn to the same position.
-   * @param x Glyph cell X-coordinate.
-   * @param y Glyph cell Y-coordinate.
-   * @param glyphs Glyphlikes to draw. An empty array is equivalent to erasing
-   * the cell.
-   * @returns Glyphmap instance for further chaining.
+   * Draw to specified cell position. Overwrites any previous data drawn to the
+   * same position.
+   * @param x Cell X-coordinate.
+   * @param y Cell Y-coordinate.
+   * @param glyphs {@link GlyphLike} data to draw, in order. An empty array is
+   * equivalent to erasing the cell data.
+   * @returns The {@link GlyphmapGameObject} instance for further chaining.
    */
   draw(x: number, y: number, glyphs: GlyphLike[]) {
     if (!this.checkBounds(x, y)) {
@@ -610,34 +636,47 @@ export class Glyphmap extends ComputedSize(class extends GlyphPluginGameObject {
       return this;
     }
 
-    const key = Glyphmap.getKey(x, y);
+    const key = GlyphmapGameObject.getKey(x, y);
 
-    const glyphPlugin = this.glyphPlugin;
+    const glyphPlugin = this._currentGlyphPlugin;
     const glyphset = this.glyphset;
-    const font = this.currentFont;
-    const forceSquareRatio = this.currentForceSquareRatio;
+    const font = this._currentFont;
+    const forceSquareRatio = this._currentForceSquareRatio;
 
     this.mapData.set(
       key,
-      glyphs.map((glyph) => glyphset.add(glyphPlugin.getTexture([glyph], font, forceSquareRatio)))
+      glyphs.map((glyph) => glyphset.add(glyphPlugin.getTexture(glyph, font, forceSquareRatio)))
     );
 
     return this;
   }
 
   /**
-   * When a Camera culls the cells in a Glyphmap it does so using its view into
-   * the world, building up a rectangle inside which the cells must exist or
-   * they will be culled. Sometimes you may need to expand the size of this
-   * 'cull rectangle', especially if you plan on rotating the Camera viewing the
-   * Glyphmap. Do so by providing the padding values. The values given are in
-   * cells, not pixels. So if the cell width was 16px and you set `paddingX` to
-   * be 4, it would add 16px x 4 to the cull rectangle (adjusted for scale).
+   * Refresh {@link GlyphmapGameObject}. Updates textures & size.
+   * @returns Reference to {@link GlyphmapGameObject} game object for further
+   * chaining.
+   */
+  refresh() {
+    super.refresh();
+    return this.updateDimensions().updateTextures();
+  }
+
+  /**
+   * When a [Phaser.Cameras.Scene2D.Camera](https://photonstorm.github.io/phaser3-docs/Phaser.Cameras.Scene2D.Camera.html)
+   * culls the cells in a {@link GlyphmapGameObject} it does so using its view
+   * into the world, building up a rectangle inside which the cells must exist
+   * or they will be culled. Sometimes you may need to expand the size of this
+   * 'cull rectangle', especially if you plan on rotating the
+   * [Phaser.Cameras.Scene2D.Camera](https://photonstorm.github.io/phaser3-docs/Phaser.Cameras.Scene2D.Camera.html)
+   * viewing the {@link GlyphmapGameObject}. Do so by providing the padding
+   * values. The values given are in cells, not pixels. So if the cell width was
+   * 16px and you set `paddingX` to be 4, it would add 16px x 4 to the cull
+   * rectangle (adjusted for scale).
    * @param paddingX (Default: 1) The amount of extra horizontal cells to add to
    * the cull check padding.
    * @param paddingY (Default: 1) The amount of extra vertical cells to add to
    * the cull check padding.
-   * @returns Glyphmap instance for further chaining.
+   * @returns The {@link GlyphmapGameObject} instance for further chaining.
    */
   setCullPadding(paddingX = 1, paddingY = 1) {
     this.cullPaddingX = paddingX;
@@ -646,9 +685,10 @@ export class Glyphmap extends ComputedSize(class extends GlyphPluginGameObject {
   }
 
   /**
-   * Control if the Cameras should cull cells before rendering.
+   * Control if the [Phaser.Cameras.Scene2D.Camera](https://photonstorm.github.io/phaser3-docs/Phaser.Cameras.Scene2D.Camera.html)
+   * should cull cells before rendering.
    * @param value (Default: true) Skip cull flag.
-   * @returns Glyphmap instance for further chaining.
+   * @returns The {@link GlyphmapGameObject} instance for further chaining.
    */
   setSkipCull(value = true) {
     this.skipCull = value;
@@ -656,11 +696,12 @@ export class Glyphmap extends ComputedSize(class extends GlyphPluginGameObject {
   }
 
   /**
-   * Converts from world X-coordinate (pixels) to glyph cell X-coordinate,
-   * factoring in the glyphmap's position, scale and scroll.
+   * Converts from world X-coordinate (pixels) to cell X-coordinate,
+   * factoring in the {@link GlyphmapGameObject}'s position, scale and scroll.
    * @param worldX World X-coordinate, in pixels.
    * @param snapToFloor (Default: true) Round result down to nearest integer.
-   * @param camera (Optional) Camera to use.
+   * @param camera (Optional) [Phaser.Cameras.Scene2D.Camera](https://photonstorm.github.io/phaser3-docs/Phaser.Cameras.Scene2D.Camera.html)
+   * to use.
    * @returns Cell X-coordinate corresponding to specified world X-coordinate.
    */
   worldToCellX(worldX: number, snapToFloor = true, camera?: Phaser.Cameras.Scene2D.Camera) {
@@ -678,11 +719,12 @@ export class Glyphmap extends ComputedSize(class extends GlyphPluginGameObject {
   }
 
   /**
-   * Converts from world Y-coordinate (pixels) to glyph cell Y-coordinate,
-   * factoring in the glyphmap's position, scale and scroll.
+   * Converts from world Y-coordinate (pixels) to cell Y-coordinate,
+   * factoring in the {@link GlyphmapGameObject}'s position, scale and scroll.
    * @param worldY World Y-coordinate, in pixels.
    * @param snapToFloor (Default: true) Round result down to nearest integer.
-   * @param camera (Optional) Camera to use.
+   * @param camera (Optional) [Phaser.Cameras.Scene2D.Camera](https://photonstorm.github.io/phaser3-docs/Phaser.Cameras.Scene2D.Camera.html)
+   * to use.
    * @returns Cell Y-coordinate corresponding to specified world Y-coordinate.
    */
   worldToCellY(worldY: number, snapToFloor = true, camera?: Phaser.Cameras.Scene2D.Camera) {
@@ -700,12 +742,13 @@ export class Glyphmap extends ComputedSize(class extends GlyphPluginGameObject {
   }
 
   /**
-   * Converts from world X,Y coordinates (pixels) to glyph cell X,Y coordinates,
-   * factoring in the glyphmap's position, scale and scroll.
+   * Converts from world X,Y coordinates (pixels) to cell X,Y coordinates,
+   * factoring in the {@link GlyphmapGameObject}'s position, scale and scroll.
    * @param worldX World X-coordinate, in pixels.
    * @param worldY World Y-coordinate, in pixels.
    * @param snapToFloor (Default: true) Round result down to nearest integer.
-   * @param camera (Optional) Camera to use.
+   * @param camera (Optional) [Phaser.Cameras.Scene2D.Camera](https://photonstorm.github.io/phaser3-docs/Phaser.Cameras.Scene2D.Camera.html)
+   * to use.
    * @returns Cell X,Y coordinates tuple corresponding to specified world X,Y
    * coordinates.
    */
@@ -717,14 +760,15 @@ export class Glyphmap extends ComputedSize(class extends GlyphPluginGameObject {
   }
 
   /**
-   * Update glyphmap dimensions.
-   * @returns Glyphmap instance for further chaining.
+   * Update {@link GlyphmapGameObject} dimensions.
+   * @returns The {@link GlyphmapGameObject} instance for further chaining.
+   * @internal
    */
   private updateDimensions() {
-    const [width, height] = this.currentGlyphPlugin.getFrameDimensions(
-      this.currentGlyphPlugin.measurementCh,
+    const [width, height] = this._currentGlyphPlugin.getFrameDimensions(
+      this._currentGlyphPlugin.measurementCodePoint,
       this.font,
-      this.currentForceSquareRatio
+      this._currentForceSquareRatio
     );
 
     this.currentCellWidth = width || 1;
@@ -734,37 +778,34 @@ export class Glyphmap extends ComputedSize(class extends GlyphPluginGameObject {
   }
 
   /**
-   * Update glyphmap textures.
-   * @returns Glyphmap instance for further chaining.
+   * Update {@link GlyphmapGameObject} textures.
+   * @returns The {@link GlyphmapGameObject} instance for further chaining.
+   * @internal
    */
   private updateTextures() {
-    this.glyphset.update(this.glyphPlugin, this.currentFont, this.currentForceSquareRatio);
+    this.glyphset.update(this.glyphPlugin, this._currentFont, this._currentForceSquareRatio);
     return this;
   }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// Glyphset Definition
+////////////////////////////////////////////////////////////////////////////////
+
 /**
- * Manages glyphmap textures.
+ * Manages {@link GlyphmapGameObject} textures.
+ * @internal
  */
 export class Glyphset {
   /**
-   * Read the first section of glyph texture key (hex string containing ch, fg, & bg data).
-   * @param texture Texture generated by a glyph plugin.
-   * @returns Hex string containing ch, fg, & bg data.
-   */
-  private static readMinimalGlyphString(texture: Phaser.Textures.Texture) {
-    return texture.key.split(' ')[0] as `0x${string}`;
-  }
-
-  /**
-   * Map numeric id to texture.
+   * Map numeric id to [Phaser.Textures.Texture](https://photonstorm.github.io/phaser3-docs/Phaser.Textures.Texture.html).
    */
   private readonly textures = new Map<number, Phaser.Textures.Texture>();
 
   /**
    * Map hex string to numeric id.
    */
-  private readonly texturesIndex = new Map<`0x${string}`, number>();
+  private readonly texturesIndex = new Map<string, number>();
 
   /**
    * Track the number of times a numeric id has been added & removed.
@@ -777,13 +818,15 @@ export class Glyphset {
   private idCount = 0;
 
   /**
-   * Add texture to glyphset. If duplicate, id is maintained and count is
-   * increased.
-   * @param texture Texture generated by a glyph plugin.
-   * @returns The numeric id of this texture in the glyphset.
+   * Add texture to {@link Glyphset}. If duplicate, id is maintained and count
+   * is increased.
+   * @param texture [Phaser.Textures.Texture](https://photonstorm.github.io/phaser3-docs/Phaser.Textures.Texture.html)
+   * generated by a glyph plugin.
+   * @returns The numeric id of this [Phaser.Textures.Texture](https://photonstorm.github.io/phaser3-docs/Phaser.Textures.Texture.html)
+   * in the {@link Glyphset}.
    */
   add(texture: Phaser.Textures.Texture) {
-    const hex = Glyphset.readMinimalGlyphString(texture);
+    const hex = Glyph.readHexStringFromTexture(texture);
 
     if (this.texturesIndex.has(hex)) {
       const id = this.texturesIndex.get(hex);
@@ -806,8 +849,8 @@ export class Glyphset {
   }
 
   /**
-   * Clear glyphset data & state.
-   * @returns Reference to glyphset for further chaining.
+   * Clear {@link Glyphset} data & state.
+   * @returns Reference to {@link Glyphset} for further chaining.
    */
   clear() {
     this.textures.clear();
@@ -818,28 +861,33 @@ export class Glyphset {
   }
 
   /**
-   * Get texture referenced by specified ID.
+   * Get [Phaser.Textures.Texture](https://photonstorm.github.io/phaser3-docs/Phaser.Textures.Texture.html)
+   * referenced by specified ID.
    * @param id Numeric texture ID.
-   * @returns Reference to texture, if it exists.
+   * @returns Reference to [Phaser.Textures.Texture](https://photonstorm.github.io/phaser3-docs/Phaser.Textures.Texture.html),
+   * if it exists.
    */
   get(id: number) {
     return this.textures.get(id);
   }
 
   /**
-   * Check if texture reference by specified ID exists in the glyphset.
+   * Check if [Phaser.Textures.Texture](https://photonstorm.github.io/phaser3-docs/Phaser.Textures.Texture.html)
+   * reference by specified ID exists in the {@link Glyphset}.
    * @param id Numeric texture ID.
-   * @returns Boolean value indicating existence within the glyphset.
+   * @returns Boolean value indicating existence within the {@link Glyphset}.
    */
   has(id: number) {
     return this.textures.has(id);
   }
 
   /**
-   * Remove texture reference by specified ID from glyphset. If this texture
-   * has been duplicated, texture is kept and ID count is decreased.
+   * Remove [Phaser.Textures.Texture](https://photonstorm.github.io/phaser3-docs/Phaser.Textures.Texture.html)
+   * reference by specified ID from {@link Glyphset}. If this
+   * [Phaser.Textures.Texture](https://photonstorm.github.io/phaser3-docs/Phaser.Textures.Texture.html)
+   * has been duplicated, it is kept and ID count is decreased.
    * @param id Numeric texture ID.
-   * @returns Reference to glyphset for further chaining.
+   * @returns Reference to {@link Glyphset} for further chaining.
    */
   remove(id: number) {
     if (!this.textures.has(id)) {
@@ -850,7 +898,7 @@ export class Glyphset {
 
     if (idCount <= 0) {
       const texture = this.textures.get(id);
-      const hex = Glyphset.readMinimalGlyphString(texture);
+      const hex = Glyph.readHexStringFromTexture(texture);
 
       this.textures.delete(id);
       this.texturesIndex.delete(hex);
@@ -863,24 +911,22 @@ export class Glyphset {
   }
 
   /**
-   * Update textures contained within the glyphset on the fly using specified
-   * plugin, font, & force square ratio combination.
-   * @param glyphPlugin Glyph plugin to use.
-   * @param font Font to use.
+   * Update [Phaser.Textures.Texture](https://photonstorm.github.io/phaser3-docs/Phaser.Textures.Texture.html)s
+   * contained within the {@link Glyphset} on the fly using specified
+   * {@link GlyphPlugin}, {@link Font}, & force square ratio combination.
+   * @param glyphPlugin {@link GlyphPlugin} to use.
+   * @param font {@link Font} to use.
    * @param forceSquareRatio Force square ratio?
-   * @returns Reference to glyphset for further chaining.
+   * @returns Reference to {@link Glyphset} for further chaining.
    */
   update(glyphPlugin: GlyphPlugin, font: Font, forceSquareRatio: boolean) {
     const textures = this.textures;
 
-    const getTextureFromBuffer = glyphPlugin['getTextureFromBuffer'].bind(
-      glyphPlugin
-    ) as typeof glyphPlugin['getTextureFromBuffer'];
-
     for (const [key, texture] of textures) {
+      const glyph = Glyph.fromTexture(texture);
       textures.set(
         key,
-        getTextureFromBuffer(convertHexStringToBuffer(Glyphset.readMinimalGlyphString(texture)), font, forceSquareRatio)
+        glyphPlugin.getTexture([glyph.codePoint, glyph.foregroundColor, glyph.backgroundColor], font, forceSquareRatio)
       );
     }
 

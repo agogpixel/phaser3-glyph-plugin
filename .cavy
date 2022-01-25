@@ -3,7 +3,7 @@
     "commands": [
       {
         "name": "eslint",
-        "targets": ["jest.config.js", "webpack.config.js", "demos", "src", "test"],
+        "targets": ["jest.config.js", "webpack.config.js", "demo", "src", "test"],
         "test": "npx --no-install --quiet eslint",
         "fix": "npx --no-install --quiet eslint --fix"
       },

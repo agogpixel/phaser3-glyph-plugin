@@ -1,0 +1,32 @@
+/* Global styles. */
+
+#demoTools {
+  font-size: 14px;
+  font-family: 'Lucida Console', Courier, monospace;
+
+  fieldset {
+    label {
+      color: wheat;
+    }
+
+    legend {
+      color: blanchedalmond;
+    }
+
+    table {
+      width: 100%;
+
+      td {
+        border: 1px solid mistyrose;
+      }
+    }
+  }
+
+  h3 {
+    color: aquamarine;
+  }
+
+  p {
+    color: azure;
+  }
+}

@@ -1,18 +1,18 @@
 import { phaserWebGLRendererMockAdapter } from '../../test/mocks/phaser-webgl-renderer-mock-adapter';
 
-import { GlyphPlugin } from '../plugin';
-import { Font, GlyphLike } from '../shared';
+import { GlyphLike } from '../glyph';
+import { GlyphPlugin } from '../plugins';
 
-import { Glyph } from './glyph';
+import { GlyphGameObject } from './glyph';
 
-describe('Glyph', () => {
+// Squelch console.log output.
+jest.spyOn(console, 'log').mockImplementation(() => undefined);
+// Running game calls window.focus method.
+jest.spyOn(window, 'focus').mockImplementation(() => undefined);
+
+describe('Glyph GameObject Module', () => {
   let game: Phaser.Game;
   let scene: Phaser.Scene;
-
-  // Squelch console.log output.
-  jest.spyOn(console, 'log').mockImplementation(() => undefined);
-  // Running game calls window.focus method.
-  jest.spyOn(window, 'focus').mockImplementation(() => undefined);
 
   afterAll(() => {
     game.destroy(true, true);
@@ -40,151 +40,111 @@ describe('Glyph', () => {
     game.textures.emit(Phaser.Textures.Events.READY);
   });
 
-  it('instantiates', () => {
-    const input = new Glyph(scene, 0, 0, ['#', '#ffff']);
-
-    const actual = (() => {
-      const result = input instanceof Glyph;
-      input.destroy();
-      return result;
-    })();
-
+  it('instantiates (defaults)', () => {
+    const input = new GlyphGameObject(scene);
+    const actual = input instanceof GlyphGameObject;
     const expected = true;
-
     expect(actual).toEqual(expected);
-  });
 
-  it('gets current font', () => {
-    const input = new Glyph(scene);
-    const actual = input.font;
-    const expected = new Font(24, 'monospace');
-
-    expect(actual).toEqual(expected);
     input.destroy();
   });
 
-  it('sets current font', () => {
-    const input = new Font(10, 'Arial, sans-serif');
+  it('instantiates', () => {
+    const input = new GlyphGameObject(scene, 0, 0, ['#', '#ffff']);
+    const actual = input instanceof GlyphGameObject;
+    const expected = true;
+    expect(actual).toEqual(expected);
+
+    input.destroy();
+  });
+
+  it('instantiates with null glyphlike', () => {
+    const input = new GlyphGameObject(scene, 0, 0, null);
+    const actual = input.glyph;
+    const expected = [' ', 'rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0)'];
+    expect(actual).toEqual(expected);
+
+    input.destroy();
+  });
+
+  it('gets background color', () => {
+    const input = new GlyphGameObject(scene);
+    const actual = input.backgroundColor;
+    const expected = new Phaser.Display.Color(0, 0, 0, 0);
+    expect(actual).toEqual(expected);
+
+    input.destroy();
+  });
+
+  it('sets background color', () => {
+    const input = '#F37C8903';
 
     const actual = (() => {
-      const glyph = new Glyph(scene);
-      glyph.font = input;
-      const result = glyph.font;
+      const glyph = new GlyphGameObject(scene);
+      glyph.backgroundColor = input;
+      const result = glyph.backgroundColor;
       glyph.destroy();
       return result;
     })();
 
-    const expected = input;
-
+    const expected = new Phaser.Display.Color(0xf3, 0x7c, 0x89, 0x03);
     expect(actual).toEqual(expected);
   });
 
-  it('updates texture when font set', () => {
-    const input = new Font(10, 'Arial, sans-serif');
-
-    const actual = (() => {
-      const glyph = new Glyph(scene);
-      const spy = jest.spyOn(glyph, 'setTexture');
-      glyph.font = input;
-      glyph.destroy();
-      return spy;
-    })();
-
-    const expected = 1;
-
-    expect(actual).toHaveBeenCalledTimes(expected);
-  });
-
-  it('gets force square ratio', () => {
-    const input = new Glyph(scene);
-    const actual = input.forceSquareRatio;
-    const expected = false;
-
+  it('gets code point', () => {
+    const input = new GlyphGameObject(scene);
+    const actual = input.codePoint;
+    const expected = 0x20;
     expect(actual).toEqual(expected);
+
     input.destroy();
   });
 
-  it('sets force square ratio', () => {
-    const input = true;
+  it('sets code point', () => {
+    const input = 'e';
 
     const actual = (() => {
-      const glyph = new Glyph(scene);
-      glyph.forceSquareRatio = input;
-      const result = glyph.forceSquareRatio;
+      const glyph = new GlyphGameObject(scene);
+      glyph.codePoint = input;
+      const result = glyph.codePoint;
       glyph.destroy();
       return result;
     })();
 
-    const expected = input;
-
+    const expected = 0x65;
     expect(actual).toEqual(expected);
   });
 
-  it('updates texture when force square ratio set', () => {
-    const input = true;
-
-    const actual = (() => {
-      const glyph = new Glyph(scene);
-      const spy = jest.spyOn(glyph, 'setTexture');
-      glyph.forceSquareRatio = input;
-      glyph.destroy();
-      return spy;
-    })();
-
-    const expected = 1;
-
-    expect(actual).toHaveBeenCalledTimes(expected);
-  });
-
-  it('gets glyph plugin', () => {
-    const input = new Glyph(scene);
-    const actual = input.glyphPlugin;
-    const expected = game.plugins.get('GlyphPlugin');
-
+  it('gets foreground color', () => {
+    const input = new GlyphGameObject(scene);
+    const actual = input.foregroundColor;
+    const expected = new Phaser.Display.Color(0, 0, 0, 0);
     expect(actual).toEqual(expected);
+
     input.destroy();
   });
 
-  it('sets glyph plugin', () => {
-    const input = new GlyphPlugin(game.plugins);
+  it('sets foreground color', () => {
+    const input = '#F37C8903';
 
     const actual = (() => {
-      const glyph = new Glyph(scene);
-      glyph.glyphPlugin = input;
-      const result = glyph.glyphPlugin;
+      const glyph = new GlyphGameObject(scene);
+      glyph.foregroundColor = input;
+      const result = glyph.foregroundColor;
       glyph.destroy();
       return result;
     })();
 
-    const expected = input;
-
+    const expected = new Phaser.Display.Color(0xf3, 0x7c, 0x89, 0x03);
     expect(actual).toEqual(expected);
-    input.destroy();
-  });
-
-  it('updates texture when glyph plugin set', () => {
-    const input = new GlyphPlugin(game.plugins);
-
-    const actual = (() => {
-      const glyph = new Glyph(scene);
-      const spy = jest.spyOn(glyph, 'setTexture');
-      glyph.glyphPlugin = input;
-      glyph.destroy();
-      return spy;
-    })();
-
-    const expected = 1;
-
-    expect(actual).toHaveBeenCalledTimes(expected);
-    input.destroy();
   });
 
   it('gets current glyph data', () => {
-    const input = new Glyph(scene);
+    const input = new GlyphGameObject(scene);
     const actual = input.glyph;
     const expected = [' ', 'rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0)'];
-
     expect(actual).toEqual(expected);
+
     input.destroy();
   });
 
@@ -192,7 +152,7 @@ describe('Glyph', () => {
     const input = ['#', '#FFF', '#F00A'] as GlyphLike;
 
     const actual = (() => {
-      const glyph = new Glyph(scene);
+      const glyph = new GlyphGameObject(scene);
       glyph.glyph = input;
       const result = glyph.glyph;
       glyph.destroy();
@@ -200,15 +160,14 @@ describe('Glyph', () => {
     })();
 
     const expected = ['#', 'rgb(255, 255, 255)', 'rgba(255, 0, 0, 0.667)'];
-
     expect(actual).toEqual(expected);
   });
 
-  it('updates texture when glyph data set', () => {
+  it('sets texture when glyph data set', () => {
     const input = ['#', '#FFF', '#F00A'] as GlyphLike;
 
     const actual = (() => {
-      const glyph = new Glyph(scene);
+      const glyph = new GlyphGameObject(scene);
       const spy = jest.spyOn(glyph, 'setTexture');
       glyph.glyph = input;
       glyph.destroy();
@@ -216,50 +175,29 @@ describe('Glyph', () => {
     })();
 
     const expected = 1;
-
-    expect(actual).toHaveBeenCalledTimes(expected);
-  });
-
-  it('falls back to first glyph plugin found when current glyph plugin is destroyed', () => {
-    const input = new GlyphPlugin(game.plugins);
-
-    const actual = (() => {
-      const glyph = new Glyph(scene);
-      const spy = jest.spyOn(glyph, 'glyphPluginDestroyEventListener');
-      glyph.glyphPlugin = input;
-      input.destroy();
-      glyph.destroy();
-      return spy;
-    })();
-
-    const expected = 1;
-
     expect(actual).toHaveBeenCalledTimes(expected);
   });
 
   it('refreshes when current glyph plugin emits an update event', () => {
-    const input = ['M', true, new GlyphPlugin(scene.plugins)] as const;
+    const input = { measurementCodePoint: 0x4d };
 
     const actual = (() => {
-      const glyph = new Glyph(scene);
-      const spy = jest.spyOn(glyph, 'refresh');
-      glyph.glyphPlugin.measurementCh = input[0];
-      glyph.glyphPlugin.advancedTextMetrics = input[1];
-      glyph.glyphPlugin = input[2];
-      glyph.destroy();
+      const gameObject = new GlyphGameObject(scene);
+      const spy = jest.spyOn(gameObject, 'refresh');
+      gameObject.glyphPlugin.setProperties(input);
+      gameObject.destroy();
       return spy;
     })();
 
-    const expected = 3;
-
+    const expected = 1;
     expect(actual).toHaveBeenCalledTimes(expected);
   });
 
   describe('CANVAS_RENDERER', () => {
-    it('renders an empty glyph (default)', () => {
+    it('renders an empty glyph game object (default)', () => {
       const input = [
         new Phaser.Renderer.Canvas.CanvasRenderer(game),
-        new Glyph(scene),
+        new GlyphGameObject(scene),
         scene.cameras.main,
         undefined
       ] as const;
@@ -273,15 +211,15 @@ describe('Glyph', () => {
       })();
 
       const expected = 1;
-
       expect(actual).toHaveBeenCalledTimes(expected);
+
       actual.mockReset();
     });
 
-    it('renders a non-empty glyph', () => {
+    it('renders a non-empty glyph game object', () => {
       const input = [
         new Phaser.Renderer.Canvas.CanvasRenderer(game),
-        new Glyph(scene),
+        new GlyphGameObject(scene),
         scene.cameras.main,
         undefined
       ] as const;
@@ -296,8 +234,8 @@ describe('Glyph', () => {
       })();
 
       const expected = 1;
-
       expect(actual).toHaveBeenCalledTimes(expected);
+
       actual.mockReset();
     });
   });
@@ -305,8 +243,12 @@ describe('Glyph', () => {
   describe('WEBGL_RENDERER', () => {
     beforeAll(() => phaserWebGLRendererMockAdapter(game));
 
-    it('renders an empty glyph (default)', () => {
-      const input = [new Phaser.Renderer.WebGL.WebGLRenderer(game), new Glyph(scene), scene.cameras.main] as const;
+    it('renders an empty glyph game object (default)', () => {
+      const input = [
+        new Phaser.Renderer.WebGL.WebGLRenderer(game),
+        new GlyphGameObject(scene),
+        scene.cameras.main
+      ] as const;
 
       const actual = (() => {
         game.renderer = input[0];
@@ -319,29 +261,33 @@ describe('Glyph', () => {
       })();
 
       const expected = 1;
-
       expect(actual).toHaveBeenCalledTimes(expected);
+
       actual.mockReset();
     });
-  });
 
-  it('renders a non-empty glyph', () => {
-    const input = [new Phaser.Renderer.WebGL.WebGLRenderer(game), new Glyph(scene), scene.cameras.main] as const;
+    it('renders a non-empty glyph game object', () => {
+      const input = [
+        new Phaser.Renderer.WebGL.WebGLRenderer(game),
+        new GlyphGameObject(scene),
+        scene.cameras.main
+      ] as const;
 
-    const actual = (() => {
-      game.renderer = input[0];
-      input[0]['boot']();
-      input[1].pipeline = input[0].pipelines.get('MultiPipeline');
-      const spy = jest.spyOn(input[1].pipeline, 'batchSprite' as never);
-      input[1].setGlyph(['#', '#fff']);
-      input[1]['renderWebGL'](...input);
-      input[1].destroy();
-      return spy;
-    })();
+      const actual = (() => {
+        game.renderer = input[0];
+        input[0]['boot']();
+        input[1].pipeline = input[0].pipelines.get('MultiPipeline');
+        const spy = jest.spyOn(input[1].pipeline, 'batchSprite' as never);
+        input[1].setGlyph(['#', '#fff']);
+        input[1]['renderWebGL'](...input);
+        input[1].destroy();
+        return spy;
+      })();
 
-    const expected = 1;
+      const expected = 1;
+      expect(actual).toHaveBeenCalledTimes(expected);
 
-    expect(actual).toHaveBeenCalledTimes(expected);
-    actual.mockReset();
+      actual.mockReset();
+    });
   });
 });
